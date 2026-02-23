@@ -84,7 +84,8 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 .leg-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text2);font-family:'IBM Plex Mono',monospace}
 .leg-line{width:18px;height:2px;border-radius:1px}
 .chart-wrap{flex:1;position:relative;min-height:0}
-.impact-zone{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;padding:0 18px 12px;max-height:150px;overflow-y:auto}
+.impact-zone{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;padding:0 18px 8px;max-height:120px;overflow-y:auto}
+.recovery-zone{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;padding:0 18px 12px;max-height:200px;overflow-y:auto}
 .impact-title{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;padding:8px 0 5px;position:sticky;top:0;background:var(--s1)}
 .impact-tbl{width:100%;border-collapse:collapse;font-size:10px}
 .impact-tbl th{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;text-align:left;border-bottom:1px solid var(--border2)}
@@ -194,6 +195,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
           <div class="legend">
             <div class="leg-item"><div class="leg-line" style="background:var(--blue)"></div>Plan original</div>
             <div class="leg-item"><div class="leg-line" style="background:var(--red)"></div>Con atrasos</div>
+            <div class="leg-item"><div class="leg-line" style="background:var(--green)"></div>Recuperaci&oacute;n</div>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="curvaSChart"></canvas></div>
@@ -201,6 +203,15 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
       <div class="impact-zone">
         <div class="impact-title">Detalle de impacto por &iacute;tem</div>
         <div id="impactTable"></div>
+      </div>
+      <div class="recovery-zone">
+        <div class="impact-title" style="display:flex;align-items:center;gap:8px">
+          <span style="color:var(--green)">&#x25B6;</span> Plan de recuperaci&oacute;n
+          <span style="font-size:9px;color:var(--text3);font-weight:400;margin-left:4px">Qu&eacute; hacer para volver a la curva original</span>
+        </div>
+        <div id="recoveryPanel">
+          <div style="padding:12px;text-align:center;color:var(--text3);font-family:IBM Plex Mono,monospace;font-size:10px">Asign&aacute; atrasos para ver el plan de recuperaci&oacute;n</div>
+        </div>
       </div>
     </div>
 
@@ -586,7 +597,7 @@ function propagateCascade(fromId, delay, visited) {
 
 function setDelay(id, val) {
   if (selectedItems[id]) {
-    selectedItems[id].delay = parseInt(val) || 0;
+    selectedItems[id].delay = parseFloat(val) || 0;
     updateCascade();
     renderAll();
     saveState();
@@ -630,7 +641,7 @@ function renderSelRows() {
         html += '<span class="cascade-lbl">\u2191 cascada (+' + item.delay + 'm)</span>';
       } else {
         html += '<div class="sr-delay"><label>Atraso:</label>';
-        html += '<input class="delay-inp" type="number" min="0" max="12" value="' + item.delay + '" data-id="' + item.id + '" onchange="setDelay(\'' + item.id + '\', this.value)"></div>';
+        html += '<input class="delay-inp" type="number" min="0" max="12" step="0.5" value="' + item.delay + '" data-id="' + item.id + '" onchange="setDelay(\'' + item.id + '\', this.value)"></div>';
         html += '<button class="rm-btn" onclick="removeItem(\'' + item.id + '\')">&#x2715;</button>';
       }
       row.innerHTML = html;
@@ -791,6 +802,7 @@ function renderAll() {
   renderMetrics();
   renderCurvaSChart();
   renderImpactTable();
+  calcRecovery();
 }
 
 // ============================================================
@@ -971,6 +983,168 @@ function addManualDep() {
   updateCascade();
   renderAll();
   saveState();
+}
+
+// ============================================================
+// PLAN DE RECUPERACIÓN
+// ============================================================
+
+var recoveryMonths = 3; // default slider
+
+function calcRecovery() {
+  var allDelays = {};
+  var vals = Object.values(selectedItems);
+  for (var i = 0; i < vals.length; i++) allDelays[vals[i].id] = vals[i].delay;
+
+  var hasDelay = vals.some(function(x) { return x.delay > 0; });
+  var panel = document.getElementById('recoveryPanel');
+  if (!panel) return;
+
+  if (!hasDelay) {
+    panel.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text3);font-family:IBM Plex Mono,monospace;font-size:10px">Assign\u00e1 atrasos para ver el plan de recuperaci\u00f3n</div>';
+    return;
+  }
+
+  var origCurve   = calcCurvaS({});
+  var delayCurve  = calcCurvaS(allDelays);
+
+  // Mes actual = primer mes donde hay divergencia significativa
+  var mesActual = 0;
+  for (var m = 0; m < origCurve.length; m++) {
+    if (delayCurve[m] < origCurve[m] - 0.05) { mesActual = m; break; }
+  }
+
+  // Brecha en el mes actual (% de avance perdido)
+  var brechaActual = origCurve[mesActual] - delayCurve[mesActual];
+
+  // Calcular la curva de recuperación:
+  // Aceleramos los ítems afectados en los próximos recoveryMonths meses
+  // redistribuyendo el trabajo faltante de forma lineal
+  var recoveryCurve = delayCurve.slice();
+
+  // Ítems afectados que aún tienen trabajo en los próximos meses
+  var affectedItems = vals.filter(function(it) { return it.delay > 0; });
+
+  // Para cada ítem afectado, calculamos cuánto avance perdió y lo redistribuimos
+  // en los recoveryMonths meses siguientes al mesActual
+  var recMensual = new Array(NUM_MESES + 20).fill(0);
+
+  // Primero copiamos el plan original completo
+  for (var i = 0; i < PLAN_DATA.length; i++) {
+    var item = PLAN_DATA[i];
+    var d = allDelays[item.id] || 0;
+    for (var j = 0; j < item.meses.length; j++) {
+      if (item.meses[j] > 0) {
+        var mesReal = j + Math.floor(d);
+        if (mesReal < recMensual.length) recMensual[mesReal] += item.incidencia * item.meses[j];
+      }
+    }
+  }
+
+  // Para ítems afectados, redistribuimos el retraso en los meses de recuperación
+  for (var i = 0; i < affectedItems.length; i++) {
+    var it = affectedItems[i];
+    var delay = it.delay;
+    if (delay <= 0) continue;
+
+    // Encontrar trabajo que quedó fuera del mes 17 por el atraso
+    var workLost = 0;
+    for (var j = 0; j < it.meses.length; j++) {
+      if (it.meses[j] > 0) {
+        var mesConDelay = j + Math.floor(delay);
+        if (mesConDelay >= NUM_MESES) workLost += it.incidencia * it.meses[j];
+      }
+    }
+
+    // Redistribuir ese trabajo adelantando en los meses de recuperación
+    if (workLost > 0 && recoveryMonths > 0) {
+      var workPerMonth = workLost / recoveryMonths;
+      for (var m = mesActual; m < mesActual + recoveryMonths && m < recMensual.length; m++) {
+        recMensual[m] += workPerMonth;
+      }
+    }
+  }
+
+  // Calcular curva acumulada de recuperación
+  var maxLen = Math.max(origCurve.length, delayCurve.length) + 5;
+  var recAccum = [];
+  var suma = 0;
+  for (var m = 0; m < recMensual.length && m < maxLen; m++) {
+    suma += recMensual[m];
+    recAccum.push(Math.min(suma * 100, 100));
+  }
+
+  // Mes en que la curva de recuperación alcanza la original
+  var mesConverge = -1;
+  for (var m = mesActual; m < recAccum.length && m < origCurve.length; m++) {
+    if (recAccum[m] >= origCurve[m] - 0.5) { mesConverge = m + 1; break; }
+  }
+
+  // Tabla de acciones por ítem afectado
+  var tableRows = '';
+  for (var i = 0; i < affectedItems.length; i++) {
+    var it = affectedItems[i];
+    if (it.isCascade) continue; // solo mostrar manuales en tabla acción
+    var delay = it.delay;
+    // Trabajo planificado para los meses de recuperación (sin atraso)
+    var workPlan = 0;
+    for (var j = mesActual; j < mesActual + recoveryMonths && j < it.meses.length; j++) {
+      workPlan += it.meses[j];
+    }
+    if (workPlan <= 0) continue;
+    // Factor de aceleración necesario
+    var factorNeeded = Math.min((workPlan + delay * 0.1) / Math.max(workPlan, 0.001), 3);
+    var pctExtra = Math.round((factorNeeded - 1) * 100);
+    var cls = pctExtra < 20 ? 'ok' : pctExtra < 50 ? 'warn' : 'danger';
+    tableRows += '<tr>' +
+      '<td style="color:var(--accent)">' + it.id + '</td>' +
+      '<td class="name-col">' + it.nombre + '</td>' +
+      '<td style="color:var(--red)">+' + delay + 'm</td>' +
+      '<td><span style="color:var(--' + cls + ');font-weight:600">+' + pctExtra + '%</span> de ritmo</td>' +
+      '<td style="color:var(--text2)">M' + (mesActual+1) + ' a M' + (mesActual+recoveryMonths) + '</td>' +
+      '</tr>';
+  }
+
+  // Renderizar panel
+  var convergeText = mesConverge > 0
+    ? 'Se retoma curva original en <span style="color:var(--green);font-weight:700">Mes ' + mesConverge + '</span>'
+    : '<span style="color:var(--red)">No alcanza a recuperarse en el plazo elegido</span>';
+
+  panel.innerHTML =
+    '<div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;flex-shrink:0">' +
+      '<div style="font-size:11px;color:var(--text)">' + convergeText + '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-left:auto">' +
+        '<span style="font-size:10px;color:var(--text2)">Recuperar en:</span>' +
+        '<input type="range" min="1" max="6" step="1" value="' + recoveryMonths + '" ' +
+          'oninput="recoveryMonths=parseInt(this.value);document.getElementById(\'recMonLabel\').textContent=this.value+\' mes\'+(this.value>1?\'es\':\'\');calcRecovery()" ' +
+          'style="width:100px;accent-color:var(--green)">' +
+        '<span id="recMonLabel" style="font-family:IBM Plex Mono,monospace;font-size:11px;color:var(--green);min-width:50px">' + recoveryMonths + ' mes' + (recoveryMonths>1?'es':'') + '</span>' +
+      '</div>' +
+    '</div>' +
+    (tableRows
+      ? '<table class="impact-tbl"><thead><tr>' +
+          '<th>Item</th><th>Nombre</th><th>Atraso</th><th>Aceleraci\u00f3n necesaria</th><th>Per\u00edodo</th>' +
+        '</tr></thead><tbody>' + tableRows + '</tbody></table>'
+      : '<div style="font-size:10px;color:var(--text3);font-family:IBM Plex Mono,monospace;padding:8px">Solo hay cascadas seleccionadas. Seleccion\u00e1 un \u00edtem manual para ver acciones.</div>'
+    );
+
+  // Actualizar gráfico con curva de recuperación
+  updateChartWithRecovery(origCurve, delayCurve, recAccum);
+}
+
+function updateChartWithRecovery(origCurve, delayCurve, recAccum) {
+  if (!charts.curvaS) return;
+  var maxLen = Math.max(origCurve.length, delayCurve.length, recAccum.length);
+  var labels = [];
+  for (var i = 0; i < maxLen; i++) labels.push('M' + (i+1));
+
+  charts.curvaS.data.labels = labels;
+  charts.curvaS.data.datasets = [
+    { label: 'Plan original',      data: padTo(origCurve, maxLen),  borderColor: '#3aafe0', backgroundColor: 'rgba(58,175,224,0.07)', borderWidth: 2, pointRadius: 2.5, fill: true, tension: 0.3 },
+    { label: 'Con atrasos',        data: padTo(delayCurve, maxLen), borderColor: '#e05c3a', backgroundColor: 'rgba(224,92,58,0.05)',  borderWidth: 2, borderDash: [6,3], pointRadius: 2.5, fill: false, tension: 0.3 },
+    { label: 'Curva recuperaci\u00f3n', data: padTo(recAccum, maxLen),  borderColor: '#3fb950', backgroundColor: 'rgba(63,185,80,0.06)',  borderWidth: 2, borderDash: [3,3], pointRadius: 2,   fill: false, tension: 0.3 }
+  ];
+  charts.curvaS.update('none');
 }
 
 </script>
