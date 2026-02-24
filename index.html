@@ -1021,6 +1021,7 @@
 
     <div class="main">
 
+      <!-- TAB SIMULADOR -->
       <div class="tab-content active" id="tab-sim">
         <div class="sim-top">
           <div class="sel-panel">
@@ -1085,4 +1086,1367 @@
         </div>
         <div class="recovery-zone">
           <div class="impact-title" style="display:flex;align-items:center;gap:8px">
-            <span style="color:var(--green)">&#x25B
+            <span style="color:var(--green)">&#x25B6;</span> Plan de recuperaci&oacute;n
+            <span style="font-size:9px;color:var(--text3);font-weight:400;margin-left:4px">Qu&eacute; hacer para volver
+              a la curva original</span>
+          </div>
+          <div id="recoveryPanel">
+            <div
+              style="padding:12px;text-align:center;color:var(--text3);font-family:IBM Plex Mono,monospace;font-size:10px">
+              Asign&aacute; atrasos para ver el plan de recuperaci&oacute;n</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB SPI -->
+      <div class="tab-content" id="tab-spi">
+        <div class="spi-layout">
+          <div class="spi-input-panel">
+            <div class="spi-section-title">Avance real acumulado por mes (%)</div>
+            <div id="spiInputRows"></div>
+            <button class="btn-primary" onclick="calcSPI()">&#x25B6; Calcular SPI</button>
+            <div style="margin-top:12px;font-size:10px;color:var(--text3);line-height:1.6">
+              Ingres&aacute; el % de avance <strong style="color:var(--text2)">acumulado real</strong> al cierre de cada
+              mes.<br>
+              Dej&aacute; en blanco los meses futuros &mdash; el sistema proyectar&aacute; autom&aacute;ticamente.
+            </div>
+          </div>
+          <div class="spi-main">
+            <div class="spi-metrics">
+              <div class="spi-met">
+                <div class="met-label">SPI actual</div>
+                <div class="met-val info" id="spiVal">&mdash;</div>
+                <div class="met-sub">Schedule Performance Index</div>
+              </div>
+              <div class="spi-met">
+                <div class="met-label">Avance planificado</div>
+                <div class="met-val ok" id="spiPlan">&mdash;</div>
+                <div class="met-sub">Al &uacute;ltimo mes con datos</div>
+              </div>
+              <div class="spi-met">
+                <div class="met-label">Fin proyectado</div>
+                <div class="met-val" id="spiEnd">&mdash;</div>
+                <div class="met-sub">Seg&uacute;n velocidad actual</div>
+              </div>
+            </div>
+            <div class="spi-charts">
+              <div class="chart-card">
+                <div class="chart-card-title">Curva S &mdash; Planificado vs Real vs Proyecci&oacute;n</div>
+                <div class="chart-card-wrap"><canvas id="spiCurveChart"></canvas></div>
+              </div>
+              <div class="chart-card">
+                <div class="chart-card-title">SPI mensual (verde &ge;0.95 / amarillo &ge;0.8 / rojo &lt;0.8)</div>
+                <div class="chart-card-wrap"><canvas id="spiBarChart"></canvas></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB DEPENDENCIAS -->
+      <div class="tab-content" id="tab-deps">
+        <div class="deps-layout">
+          <div class="deps-hdr">
+            <h2>Mapa de Dependencias</h2>
+            <p>Generadas autom&aacute;ticamente desde la jerarqu&iacute;a del plan + relaciones entre rubros.
+              Pod&eacute;s eliminar o agregar manualmente.</p>
+          </div>
+          <div class="deps-filter">
+            <span class="dep-tipo jerarquia">jerarqu&iacute;a</span><span
+              style="font-size:10px;color:var(--text2)">Padre &rarr; Hijo</span>
+            <span class="dep-tipo rubro">rubro</span><span style="font-size:10px;color:var(--text2)">Entre rubros
+              (f&iacute;sico)</span>
+            <span class="dep-tipo manual">manual</span><span style="font-size:10px;color:var(--text2)">Agregada por
+              vos</span>
+            <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3)"
+              id="depCount"></span>
+          </div>
+          <div class="deps-table-wrap">
+            <table class="deps-tbl">
+              <thead>
+                <tr>
+                  <th>Predecesor</th>
+                  <th>Sucesor</th>
+                  <th>Tipo</th>
+                  <th>Nombre predecesor</th>
+                  <th>Nombre sucesor</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="depsTableBody"></tbody>
+            </table>
+          </div>
+          <div class="add-dep-row">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);white-space:nowrap">+
+              AGREGAR:</span>
+            <select class="dep-select" id="depFromSel"></select>
+            <span style="font-size:11px;color:var(--text3)">&rarr;</span>
+            <select class="dep-select" id="depToSel"></select>
+            <button class="btn-sm" onclick="addManualDep()" style="white-space:nowrap">Agregar</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="toast"
+    style="position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:8px 16px;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;z-index:999">
+  </div>
+
+  <!-- DATOS Y LÓGICA -->
+  <script>
+    var PLAN_DATA = [{ "id": "ARQ 1.1.1", "nombre": "Limpieza terreno", "incidencia": 0.000773, "meses": [0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "ARQ 1.1.2.1", "nombre": "Demolición edificio existente", "incidencia": 0.000465, "meses": [0, 0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "ARQ 1.1.2.2", "nombre": "Erradicación de forestales", "incidencia": 0.000186, "meses": [0, 0, 0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "ARQ 1.1.3", "nombre": "Verificación de medidas y replanteo", "incidencia": 0.001321, "meses": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0, 0, 0, 0, 0, 0] }, { "id": "ARQ 1.2.1", "nombre": "Presentación de Documentación y Plan de HyS aprobado", "incidencia": 0.013954, "meses": [0.8, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "ARQ 1.2.2", "nombre": "Servicio de H y S durante la ejecución de obra", "incidencia": 0.018606, "meses": [0.05, 0.05, 0.05, 0.05, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.05, 0.05, 0.1] }, { "id": "ARQ 1.3.1", "nombre": "Documentación Técnica Ejecutiva Aprobada", "incidencia": 0.012219, "meses": [0.3, 0.7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "ARQ 1.3.2", "nombre": "Documentación Tecnica Municipal y otros Entes", "incidencia": 0.002444, "meses": [0, 0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "ARQ 1.3.3", "nombre": "Aportes Previsionales Profesionales", "incidencia": 0.004073, "meses": [0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "ARQ 1.4.1", "nombre": "Entrega de Manuales de operación y mantenimiento de la totalidad de componentes e\ninstalaciones – Garantías", "incidencia": 0.000163, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 1.4.2", "nombre": "Capacitación del personal de mantenimiento", "incidencia": 0.000244, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 1.4.3", "nombre": "Presentación a la inspección de Documentación técnica Conforme a Obra", "incidencia": 0.000815, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 1.5.1", "nombre": "Provisión e instalación del módulo Comedor", "incidencia": 0.019028, "meses": [0, 0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "ARQ 2.1.1", "nombre": "Capa aisladora horizontal y vertical en mampostería", "incidencia": 0.000483, "meses": [0, 0, 0.05, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0, 0, 0, 0] }, { "id": "ARQ 2.1.2", "nombre": "Pintura/geotextil en estructuras en contacto con el suelo", "incidencia": 0.000395, "meses": [0, 0, 0.05, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0, 0, 0, 0] }, { "id": "ARQ 2.1.3", "nombre": "Impermeabilización de losas (aislación térmica e hidrófuga)", "incidencia": 0.008879, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0, 0, 0] }, { "id": "ARQ 2.1.4", "nombre": "Drenajes especiales c/geotextil compuesto, termosoldados para estructura", "incidencia": 0.000568, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0, 0, 0] }, { "id": "ARQ 3.1", "nombre": "Grueso impermeable", "incidencia": 0.004136, "meses": [0, 0, 0, 0, 0.05, 0.1, 0.1, 0.1, 0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0, 0] }, { "id": "ARQ 3.2", "nombre": "Grueso y fino", "incidencia": 0.003677, "meses": [0, 0, 0, 0, 0.05, 0.1, 0.1, 0.1, 0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0, 0] }, { "id": "ARQ 4.1", "nombre": "Cubierta panel sándwich", "incidencia": 0.048768, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0, 0] }, { "id": "ARQ 4.2", "nombre": "Zinguerias: cenefas, babetas y goteros metálicos", "incidencia": 0.003733, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0] }, { "id": "ARQ 4.3", "nombre": "Gárgolas de Hormigón Armado", "incidencia": 9.4e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0, 0] }, { "id": "ARQ 5.1.1", "nombre": "Contrapiso armado sobre terreno nivelado y compactado (esp. 0,15m)", "incidencia": 0.033906, "meses": [0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0, 0, 0] }, { "id": "ARQ 5.2.1", "nombre": "Contrapisos llaneados tipo lajas (esp. 0,12m)", "incidencia": 0.013537, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0] }, { "id": "ARQ 5.2.2", "nombre": "Cordones de borde de zona de juegos, jardines, canteros", "incidencia": 0.003482, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0] }, { "id": "ARQ 5.2.3", "nombre": "Contrapiso de HºAº estampado", "incidencia": 0.012571, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0] }, { "id": "ARQ 6.1.1", "nombre": "Baldosas de granito reconstituido semipulido 30x30 cm", "incidencia": 0.044686, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.2, 0.1, 0] }, { "id": "ARQ 6.1.2", "nombre": "Baldosas de granito podotáctil", "incidencia": 0.001995, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.2, 0.1, 0] }, { "id": "ARQ 6.2.1", "nombre": "Piso de Caucho Continuo In Situ", "incidencia": 0.012426, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0] }, { "id": "ARQ 6.2.2", "nombre": "Piso de adoquines premoldeados", "incidencia": 0.005928, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0] }, { "id": "ARQ 7.1.1", "nombre": "Granítico h=0.10 ml", "incidencia": 0.012073, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.3, 0.3, 0.1, 0] }, { "id": "ARQ 7.2.1", "nombre": "Rehundido de hormigón visto", "incidencia": 0.002839, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.3, 0.3, 0.1, 0] }, { "id": "ARQ 8.1.1", "nombre": "Tabiques de placa de roca de yeso", "incidencia": 0.01499, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.3, 0.3, 0.1, 0] }, { "id": "ARQ 8.2.1", "nombre": "Tabique divisor box sanitario de aluminio y placa MDF en laminado plástico + puerta", "incidencia": 0.002983, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.5, 0.25, 0] }, { "id": "ARQ 9.1", "nombre": "Suspendido de placa de roca de yeso", "incidencia": 0.008016, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2, 0] }, { "id": "ARQ 10.1.1", "nombre": "Porcelanatos o cerámicos", "incidencia": 0.010169, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2, 0] }, { "id": "ARQ 11.1.1", "nombre": "Ventanas fijas/corredizas/abrir con vidrio 3+3", "incidencia": 0.052994, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 11.1.2", "nombre": "Puertas corredizas/abrir con paño fijo de vidrio 3+3", "incidencia": 0.001347, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 11.2.1", "nombre": "Puertas de madera corredizas/abrir con marco metálico", "incidencia": 0.00444, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 11.3.1", "nombre": "Puerta metálica de abrir inyectada c/marco metálico", "incidencia": 0.014454, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 11.3.2", "nombre": "Portón c/marco metálico+chapa perforada", "incidencia": 0.008696, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 11.3.3", "nombre": "Puerta de reja metálica de abrir c/marco metálico", "incidencia": 0.001391, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 11.3.4", "nombre": "Puerta corrediza Salida SUM a patio de juegos", "incidencia": 0.001302, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 11.3.5", "nombre": "Barral antipanico para puerta doble", "incidencia": 0.002664, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 11.4.1", "nombre": "Vidrios laminados 3+3", "incidencia": 0.008691, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 11.4.2", "nombre": "Espejos (esp. 3mm)", "incidencia": 0.000286, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 12.1.1", "nombre": "Caño estructural, perfiles, planchuelas, hierro dulce", "incidencia": 0.008162, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 12.2.1", "nombre": "Metálica (de caños redondos o estructurales cerrados)", "incidencia": 0.001067, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0] }, { "id": "ARQ 13.1.1", "nombre": "Látex", "incidencia": 0.006044, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3] }, { "id": "ARQ 13.1.2", "nombre": "Antióxido y esmalte sintético", "incidencia": 0.002745, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3] }, { "id": "ARQ 13.1.3", "nombre": "Látex para cielorrasos", "incidencia": 0.000923, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3] }, { "id": "ARQ 13.1.4", "nombre": "Protección de Hormigón Visto", "incidencia": 0.001773, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3] }, { "id": "ARQ 13.2.1", "nombre": "Látex", "incidencia": 0.001606, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3] }, { "id": "ARQ 13.2.2", "nombre": "Antióxido y esmalte sintético", "incidencia": 0.002658, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3] }, { "id": "ARQ 14.1.1", "nombre": "Mesada de Acero inoxidable", "incidencia": 0.000381, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2] }, { "id": "ARQ 14.1.2", "nombre": "Mesada granito natural /piedra", "incidencia": 0.001252, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2] }, { "id": "ARQ 14.1.3", "nombre": "Muebles bajo mesada, alacenas", "incidencia": 0.00434, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2] }, { "id": "ARQ 14.1.4", "nombre": "Muebles guardado", "incidencia": 0.008488, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2] }, { "id": "ARQ 14.1.5", "nombre": "Percheros", "incidencia": 0.000555, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2] }, { "id": "ARQ 14.1.6", "nombre": "Campana de Acero Inoxidable", "incidencia": 0.000447, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2] }, { "id": "ARQ 14.2.1", "nombre": "Bancos, asientos", "incidencia": 0.005981, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 14.2.2", "nombre": "Cesto de residuos selectivos", "incidencia": 0.005974, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 14.2.3", "nombre": "Bicicleteros", "incidencia": 0.000559, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 14.2.4", "nombre": "Juegos infantiles, integradores y aparatos de gimnasia", "incidencia": 0.002393, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 14.2.5", "nombre": "Mástiles", "incidencia": 0.002347, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.1", "nombre": "Biblioteca ambulante", "incidencia": 0.000457, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.2", "nombre": "Biblioteca para Sala - B1", "incidencia": 0.003346, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.3", "nombre": "Estantería exhibidora - ED1", "incidencia": 0.001193, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.4", "nombre": "Mesa nivel inicial - 50*50 cm - M1-A", "incidencia": 0.00394, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.5", "nombre": "Mesa nivel inicial - 50*50 cm - M1-B", "incidencia": 0.004173, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.6", "nombre": "Sillas nivel inicial - S1", "incidencia": 0.005216, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.7", "nombre": "Mesa de caño - MC1", "incidencia": 0.002165, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.8", "nombre": "Sillas apilables de caño para niños - SC1", "incidencia": 0.004904, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.9", "nombre": "Armario oficina", "incidencia": 0.000473, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.10", "nombre": "Mueble bajo oficina", "incidencia": 0.000434, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.11", "nombre": "Escritorio con cajonera móvil Dir. Psic.", "incidencia": 0.000331, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.12", "nombre": "Escritorio para maestra con cajonera móvil", "incidencia": 0.001193, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.13", "nombre": "Mesa grupal adultos - MC3", "incidencia": 9.8e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.14", "nombre": "Sillas tapizadas adultos", "incidencia": 0.000389, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 15.15", "nombre": "Sillas apilables adultos", "incidencia": 0.001842, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ARQ 16.1", "nombre": "Veredas de hormigón armado, ochavas, rampas para discapacitados, etc.", "incidencia": 0.004715, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "ARQ 16.2", "nombre": "Puentes de hormigón armado vehiculares y peatonales", "incidencia": 0.00043, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "ARQ 16.3", "nombre": "Casetas para arbolado público", "incidencia": 0.000989, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "ARQ 16.4", "nombre": "Pilonas de contención", "incidencia": 0.000749, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "ARQ 16.5", "nombre": "Cierre Perimetral Modular de malla electrosoldada", "incidencia": 0.005489, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "ARQ 16.6", "nombre": "Muros de Cierre y Contención de hormigón y piedra", "incidencia": 0.004285, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "ARQ 17.1", "nombre": "Limpieza de obra", "incidencia": 0.011698, "meses": [0.05, 0.05, 0.05, 0.05, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.05, 0.05, 0.1] }, { "id": "EST 1.1", "nombre": "Excavaciones fundaciones", "incidencia": 0.005247, "meses": [0, 0.4, 0.4, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "EST 1.2", "nombre": "Estudio de suelos", "incidencia": 0.000201, "meses": [1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "EST 2.1", "nombre": "H° de limpieza bajo estructura de fundación", "incidencia": 0.004192, "meses": [0, 0.2, 0.3, 0.3, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "EST 2.2", "nombre": "Zapatas corridas, Plateas, Bases aisladas, Cimientos de Hº Ciclópeo y Pozos de fundación", "incidencia": 0.068894, "meses": [0, 0.2, 0.3, 0.3, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "EST 2.3", "nombre": "Vigas de Fundación", "incidencia": 0.020063, "meses": [0, 0, 0.2, 0.3, 0.3, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, { "id": "EST 2.4", "nombre": "Columnas", "incidencia": 0.027369, "meses": [0, 0, 0.05, 0.1, 0.15, 0.15, 0.15, 0.15, 0.1, 0.1, 0.05, 0, 0, 0, 0, 0, 0] }, { "id": "EST 2.5", "nombre": "Vigas", "incidencia": 0.049654, "meses": [0, 0, 0, 0.05, 0.1, 0.15, 0.15, 0.15, 0.15, 0.1, 0.1, 0.05, 0, 0, 0, 0, 0] }, { "id": "EST 2.6", "nombre": "Tabiques, Muros de sostenimientos", "incidencia": 0.007376, "meses": [0, 0, 0, 0.05, 0.1, 0.15, 0.15, 0.15, 0.15, 0.1, 0.1, 0.05, 0, 0, 0, 0, 0] }, { "id": "EST 2.7", "nombre": "Losas macizas de hormigón visto", "incidencia": 0.021725, "meses": [0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0, 0, 0, 0, 0] }, { "id": "EST 2.8", "nombre": "Losas macizas", "incidencia": 0.002424, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0, 0, 0, 0] }, { "id": "EST 3.1", "nombre": "Columnas, Vigas, Correas, Diagonales, Tensores", "incidencia": 0.055911, "meses": [0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2, 0, 0, 0, 0, 0] }, { "id": "EST 4.1", "nombre": "Mampostería con ladrillos macizos", "incidencia": 0.009534, "meses": [0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0, 0, 0] }, { "id": "ICF 1.1", "nombre": "Acometida y Tablero Principal TP", "incidencia": 0.001418, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2] }, { "id": "ICF 1.2", "nombre": "Tablero General TG", "incidencia": 0.00465, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1] }, { "id": "ICF 1.3", "nombre": "Tableros Seccionales", "incidencia": 0.006118, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1] }, { "id": "ICF 2.1", "nombre": "Puesta a tierra completa", "incidencia": 0.000903, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2] }, { "id": "ICF 2.2", "nombre": "Medición puestas a tierra (S/Res. SRT 900/15)", "incidencia": 9.9e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2] }, { "id": "ICF 2.3", "nombre": "Protección contra descargas atmosféricas", "incidencia": 0.002973, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2] }, { "id": "ICF 2.4", "nombre": "Provisión y colocación de cable desnudo 50mm2", "incidencia": 0.00117, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2] }, { "id": "ICF 3.1", "nombre": "Cañerías metálicas", "incidencia": 0.001947, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ICF 3.2", "nombre": "Bandejas portacables", "incidencia": 0.000425, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ICF 3.3", "nombre": "Canalizaciones subterráneas", "incidencia": 0.0007, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ICF 4.1", "nombre": "Conductores unipolares LSOH", "incidencia": 0.003707, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2] }, { "id": "ICF 4.2", "nombre": "Cables subterráneos LSOH sobre bandeja portacable", "incidencia": 0.001742, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2] }, { "id": "ICF 4.3", "nombre": "Instalaciones subterráneas", "incidencia": 0.001853, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2] }, { "id": "ICF 5.1", "nombre": "Tipo de artefactos de iluminación", "incidencia": 0.013535, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ICF 5.2", "nombre": "Equipos de luz de emergencia autónoma LED (LE)", "incidencia": 0.00033, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ICF 5.3", "nombre": "Luces de emergencia autónoma con 2 faros LED (LEA2F)", "incidencia": 0.000233, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ICF 6.1", "nombre": "Metálicas semipesadas", "incidencia": 0.001606, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ICF 6.2", "nombre": "Llaves, sensores y tomacorrientes", "incidencia": 0.00054, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.3, 0.2, 0.2] }, { "id": "ICF 7.1", "nombre": "Bombas de agua", "incidencia": 0.002942, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.5] }, { "id": "ICF 7.2", "nombre": "Bombas para riego", "incidencia": 0.001165, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.5] }, { "id": "ICF 7.3", "nombre": "Extractor de campana tipo Z", "incidencia": 4.8e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.5] }, { "id": "ICF 7.4", "nombre": "UPS 800VA", "incidencia": 0.001201, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.5] }, { "id": "ICF 7.5", "nombre": "Termotanque eléctrico", "incidencia": 0.000562, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.5] }, { "id": "IPF 1", "nombre": "Gabinete de Corriente Continua GE1", "incidencia": 0.00068, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "IPF 2", "nombre": "Inversor de corriente continua (DC)", "incidencia": 0.005241, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "IPF 3", "nombre": "Canalizaciones", "incidencia": 0.000519, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "IPF 4", "nombre": "Conductores", "incidencia": 0.000247, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "IPF 5", "nombre": "Puesta a Tierra", "incidencia": 8.2e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "IPF 6", "nombre": "Medidor bidireccional", "incidencia": 0.000874, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "IPF 7", "nombre": "Lector de Monitoreo", "incidencia": 0.000204, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "IPF 8", "nombre": "Provisión de Paneles y Soportes de Sujeción", "incidencia": 0.015724, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ICD 1.1", "nombre": "Bandejas portacables", "incidencia": 0.000425, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ICD 1.2", "nombre": "Caño PVC", "incidencia": 0.000404, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ICD 1.3", "nombre": "Caño metálico", "incidencia": 0.000327, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ICD 1.4", "nombre": "Caja rectangular metálica", "incidencia": 0.000173, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ICD 2.1", "nombre": "UTP", "incidencia": 0.000292, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ICD 2.2", "nombre": "Patch Cord", "incidencia": 8e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ICD 3.1", "nombre": "Sistema de alarma contra robo (SAR)", "incidencia": 0.001498, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ICD 4.1", "nombre": "Rack y accesorios", "incidencia": 0.001543, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ICD 4.2", "nombre": "Switch", "incidencia": 0.000319, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ICD 4.3", "nombre": "Central telefónica", "incidencia": 0.000121, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ICD 4.4", "nombre": "Teléfonos", "incidencia": 0.000152, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ICD 4.5", "nombre": "Access Point (AP)", "incidencia": 0.001777, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ICD 4.1", "nombre": "Certificación de sistema", "incidencia": 0.000322, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ITM 1.1", "nombre": "Equipos separados tipo Piso-Techo", "incidencia": 0.005896, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2] }, { "id": "ITM 1.2", "nombre": "Equipos split", "incidencia": 0.010669, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2] }, { "id": "ITM 1.3", "nombre": "Equipos multisplit", "incidencia": 0.004335, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2] }, { "id": "ITM 2.1", "nombre": "Provisión y montaje de tubería de cobre", "incidencia": 0.001117, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2] }, { "id": "ITM 2.2", "nombre": "Provisión y montaje de cañería desagüe de condensado", "incidencia": 8.1e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2] }, { "id": "ITM 3.1", "nombre": "Calderas", "incidencia": 0.006155, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ITM 3.2", "nombre": "Radiadores", "incidencia": 0.011499, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4] }, { "id": "ITM 3.3", "nombre": "Cañería termofusionable", "incidencia": 0.001129, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2] }, { "id": "ITM 3.4", "nombre": "Pruebas y ensayos", "incidencia": 0.000525, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0] }, { "id": "ITM 4.1", "nombre": "Termostatos", "incidencia": 0.000208, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2] }, { "id": "ISA 1.1", "nombre": "Conexiones externas", "incidencia": 0.000312, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.3, 0.5, 0.2] }, { "id": "ISA 1.2", "nombre": "Cañerías primarias y accesorios", "incidencia": 0.001977, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ISA 1.3", "nombre": "Cañerías secundarias y accesorios", "incidencia": 0.000601, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ISA 1.4", "nombre": "Cañerías de ventilación", "incidencia": 0.000357, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ISA 1.5", "nombre": "Piletas de patio, bocas de acceso, bocas tapa inspección, bocas de registro y accesorios", "incidencia": 0.000245, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ISA 1.6", "nombre": "Cámaras de Inspección", "incidencia": 0.000483, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ISA 2.1", "nombre": "Cañerías horizontales enterradas, bocas, rejas y accesorios", "incidencia": 0.002708, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ISA 2.2", "nombre": "Bocas de Desagüe", "incidencia": 0.000799, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ISA 2.3", "nombre": "Conexiones externas a acequias, hijuelas, pozos de infiltración, servidumbres (habilitación)", "incidencia": 0.000596, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.1", "nombre": "Provisión y colocación: cañerías de alimentación, equipamiento, accesorios", "incidencia": 0.000157, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.2", "nombre": "Provisión y colocación: cisterna, tanques de reserva de agua", "incidencia": 0.002014, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.2, 0.3] }, { "id": "ISA 3.3", "nombre": "Provisión y colocación: cañerías de distribución hasta artefactos, llaves, canillas de servicio y\naccesorios", "incidencia": 0.002182, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1] }, { "id": "ISA 3.4", "nombre": "Artefactos y griferías: Inodoro pedestal", "incidencia": 0.002372, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.5", "nombre": "Artefactos y griferías: lavatorios", "incidencia": 0.001179, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.6", "nombre": "Artefactos y griferías: piletón y grifería para sanitario alumnos", "incidencia": 0.002791, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.7", "nombre": "Artefactos y griferías: kit completo lavatorio e inodoro de loza y grifería baño para personas con\ndiscapacidad", "incidencia": 0.00043, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.8", "nombre": "Artefactos y griferías: kit de accesorios de baños", "incidencia": 0.000756, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.9", "nombre": "Artefactos y griferías: kit de accesorios de baños para personas con discapacidad", "incidencia": 0.000124, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.10", "nombre": "Conexiones cromadas flexibles a artefactos, con llavines de corte en cada uno.", "incidencia": 0.000463, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.11", "nombre": "Provisión de otros equipos y accesorios (ablandador de agua, presurización, dispenser de\nagua, clorinadores, etc)", "incidencia": 0.004748, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.12", "nombre": "Pileta de acero inoxidable y grifería", "incidencia": 0.000959, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "ISA 3.13", "nombre": "Conexiones cromadas flexibles a termotanque eléctrico, con llavines de corte", "incidencia": 0.000834, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "SCI 1.1", "nombre": "Matafuegos ABC", "incidencia": 0.002371, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0] }, { "id": "SCI 1.2", "nombre": "Matafuegos K", "incidencia": 0.000382, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0] }, { "id": "SCI 1.3", "nombre": "Carteles de señalización alto impacto clase A", "incidencia": 0.000494, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0] }, { "id": "SCI 1.4", "nombre": "Señalización autónomos", "incidencia": 6.7e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0] }, { "id": "SCI 2.1", "nombre": "Central de alarma", "incidencia": 0.002905, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3] }, { "id": "SCI 2.2", "nombre": "Pulsadores", "incidencia": 0.00305, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3] }, { "id": "SCI 2.3", "nombre": "Bocinas / Sirenas", "incidencia": 0.002033, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3] }, { "id": "SCI 3.1", "nombre": "Detector de humo", "incidencia": 0.000722, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3] }, { "id": "SCI 3.2", "nombre": "Detector de gas", "incidencia": 0.000133, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3] }, { "id": "SCI 3.3", "nombre": "Detector de temperatura", "incidencia": 7.2e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3] }, { "id": "IGN 1.1", "nombre": "Provisión y colocación tanque de GLP", "incidencia": 0.00262, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "IGN 1.2", "nombre": "Provisión y colocación defensa perimetral", "incidencia": 0.00039, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "IGN 1.3", "nombre": "Construcción base de hormigón armado", "incidencia": 0.000839, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "IGN 1.4", "nombre": "Regulador", "incidencia": 0.000642, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "IGN 2.1", "nombre": "Cañerías ø 50mm", "incidencia": 0.000542, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15, 0.2, 0.2, 0.2, 0.15, 0] }, { "id": "IGN 2.2", "nombre": "Cañerías ø 40mm", "incidencia": 0.001503, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15, 0.2, 0.2, 0.2, 0.15, 0] }, { "id": "IGN 2.3", "nombre": "Cañerías ø 32mm", "incidencia": 0.00223, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15, 0.2, 0.2, 0.2, 0.15, 0] }, { "id": "IGN 2.4", "nombre": "Ventilaciones", "incidencia": 4.4e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15, 0.2, 0.2, 0.2, 0.15, 0] }, { "id": "IGN 3.1", "nombre": "Cocina industrial", "incidencia": 0.000574, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "IGN 3.2", "nombre": "Horno", "incidencia": 0.000525, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "IGN 3.3", "nombre": "Termotanque", "incidencia": 0.000309, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "PJM 1.1", "nombre": "Malla geotextil anti-hierbas", "incidencia": 0.000169, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3] }, { "id": "PJM 2.1", "nombre": "Provisión y plantado de árboles", "incidencia": 0.00035, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "PJM 2.2", "nombre": "Provisión y plantado de arbustivas, herbáceas, gramíneas, floríferas", "incidencia": 0.000685, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "PJM 2.3", "nombre": "Provisión de semillas para huerta", "incidencia": 5e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "PJM 2.4", "nombre": "Provisión y plantado de panes de césped", "incidencia": 0.000726, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "PJM 3.1", "nombre": "Sistema de riego", "incidencia": 0.003053, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2] }, { "id": "PJM 4.1", "nombre": "Tierra preparada y fertilizante", "incidencia": 9.1e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "PJM 4.2", "nombre": "Chips de corteza", "incidencia": 0.000273, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "PJM 4.3", "nombre": "Granza", "incidencia": 6e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.1", "nombre": "Tótem ingreso al establecimiento", "incidencia": 0.000255, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.2", "nombre": "Indicadores individuales", "incidencia": 0.000355, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.3", "nombre": "Información para padres", "incidencia": 0.000592, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.4", "nombre": "Indicación Sanitarios Administración", "incidencia": 7.9e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.5", "nombre": "Indicación Puertas Salitas", "incidencia": 0.001263, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.6", "nombre": "Espejos Sanitarios Salitas", "incidencia": 0.000316, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.7", "nombre": "Indicadores cromáticos", "incidencia": 0.000632, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.8", "nombre": "Indicadores Aulas", "incidencia": 0.000158, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.9", "nombre": "Indicadores piso", "incidencia": 0.000178, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.10", "nombre": "Gráfica muros aulas", "incidencia": 0.000553, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.11", "nombre": "Área recreativa: galería o patio", "incidencia": 0.000178, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.12", "nombre": "Área recreativa: deportiva circuito motriz", "incidencia": 0.000178, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.13", "nombre": "Gráfica vidrios", "incidencia": 0.000316, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.14", "nombre": "Paneles de motricidad fina", "incidencia": 0.000474, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.15", "nombre": "Indicadores materiales en salas", "incidencia": 0.005526, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.16", "nombre": "Percheros", "incidencia": 0.000138, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 1.17", "nombre": "Panel aprendizaje Sum o área común en galería", "incidencia": 7.9e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 2.1", "nombre": "Placa inaugural", "incidencia": 0.000237, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 2.2", "nombre": "Carteles en ruta doble faz", "incidencia": 0.000745, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 2.3", "nombre": "Tótem ingreso general", "incidencia": 0.000178, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }, { "id": "STC 2.4", "nombre": "Corpóreas nombre institución", "incidencia": 0.00041, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5] }];
+    var AUTO_DEPS_ORIG = [{ "from": "EST 4.1", "to": "ICF 1.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 1.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 1.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 2.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 2.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 2.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 2.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 3.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 3.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 3.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 4.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 4.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 4.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 5.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 5.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 5.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 6.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 6.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 7.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 7.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 7.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 7.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICF 7.5", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "IPF 1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "IPF 2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "IPF 3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "IPF 4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "IPF 5", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "IPF 6", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "IPF 7", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "IPF 8", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 1.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 1.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 1.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 1.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 2.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 2.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 3.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 4.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 4.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 4.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 4.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 4.5", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ICD 4.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ITM 1.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ITM 1.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ITM 1.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ITM 2.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ITM 2.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ITM 3.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ITM 3.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ITM 3.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ITM 3.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ITM 4.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 1.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 1.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 1.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 1.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 1.5", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 1.6", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 2.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 2.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 2.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.5", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.6", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.7", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.8", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.9", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.10", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.11", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.12", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "ISA 3.13", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "EST 4.1", "to": "SCI 1.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "SCI 1.1", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "SCI 1.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "SCI 1.2", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "SCI 1.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "SCI 1.3", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "SCI 1.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "SCI 1.4", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "SCI 2.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "SCI 2.1", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "SCI 2.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "SCI 2.2", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "SCI 2.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "SCI 2.3", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "SCI 3.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "SCI 3.1", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "SCI 3.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "SCI 3.2", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "SCI 3.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "SCI 3.3", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 1.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 1.1", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 1.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 1.2", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 1.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 1.3", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 1.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 1.4", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 2.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 2.1", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 2.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 2.2", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 2.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 2.3", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 2.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 2.4", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 3.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 3.1", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 3.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 3.2", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "IGN 3.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "IGN 3.3", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "EST 4.1", "to": "PJM 1.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "PJM 1.1", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "ISA 1.1", "to": "PJM 1.1", "tipo": "rubro", "dep_rubro": "ISA" }, { "from": "EST 4.1", "to": "PJM 2.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "PJM 2.1", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "ISA 1.1", "to": "PJM 2.1", "tipo": "rubro", "dep_rubro": "ISA" }, { "from": "EST 4.1", "to": "PJM 2.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "PJM 2.2", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "ISA 1.1", "to": "PJM 2.2", "tipo": "rubro", "dep_rubro": "ISA" }, { "from": "EST 4.1", "to": "PJM 2.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "PJM 2.3", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "ISA 1.1", "to": "PJM 2.3", "tipo": "rubro", "dep_rubro": "ISA" }, { "from": "EST 4.1", "to": "PJM 2.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "PJM 2.4", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "ISA 1.1", "to": "PJM 2.4", "tipo": "rubro", "dep_rubro": "ISA" }, { "from": "EST 4.1", "to": "PJM 3.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "PJM 3.1", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "ISA 1.1", "to": "PJM 3.1", "tipo": "rubro", "dep_rubro": "ISA" }, { "from": "EST 4.1", "to": "PJM 4.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "PJM 4.1", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "ISA 1.1", "to": "PJM 4.1", "tipo": "rubro", "dep_rubro": "ISA" }, { "from": "EST 4.1", "to": "PJM 4.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "PJM 4.2", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "ISA 1.1", "to": "PJM 4.2", "tipo": "rubro", "dep_rubro": "ISA" }, { "from": "EST 4.1", "to": "PJM 4.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "ICD 1.1", "to": "PJM 4.3", "tipo": "rubro", "dep_rubro": "ICD" }, { "from": "ISA 1.1", "to": "PJM 4.3", "tipo": "rubro", "dep_rubro": "ISA" }, { "from": "EST 4.1", "to": "STC 1.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.1", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.1", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.2", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.2", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.3", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.3", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.4", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.4", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.5", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.5", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.5", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.6", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.6", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.6", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.7", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.7", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.7", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.8", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.8", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.8", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.9", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.9", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.9", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.10", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.10", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.10", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.11", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.11", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.11", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.12", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.12", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.12", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.13", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.13", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.13", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.14", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.14", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.14", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.15", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.15", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.15", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.16", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.16", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.16", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 1.17", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 1.17", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 1.17", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 2.1", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 2.1", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 2.1", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 2.2", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 2.2", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 2.2", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 2.3", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 2.3", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 2.3", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 4.1", "to": "STC 2.4", "tipo": "rubro", "dep_rubro": "EST" }, { "from": "PJM 1.1", "to": "STC 2.4", "tipo": "rubro", "dep_rubro": "PJM" }, { "from": "SCI 1.1", "to": "STC 2.4", "tipo": "rubro", "dep_rubro": "SCI" }, { "from": "EST 1.2", "to": "EST 1.1", "tipo": "manual", "razon": "Estudio de suelos antes de excavar" }, { "from": "EST 1.1", "to": "EST 2.1", "tipo": "manual", "razon": "Excavar antes de H limpieza" }, { "from": "EST 2.1", "to": "EST 2.2", "tipo": "manual", "razon": "H limpieza antes de fundaciones" }, { "from": "EST 2.2", "to": "EST 2.3", "tipo": "manual", "razon": "Zapatas antes de vigas de fundacion" }, { "from": "EST 2.3", "to": "EST 4.1", "tipo": "manual", "razon": "Vigas fundacion antes de mamposteria" }, { "from": "EST 2.3", "to": "EST 2.4", "tipo": "manual", "razon": "Vigas fundacion antes de columnas" }, { "from": "EST 2.4", "to": "EST 2.5", "tipo": "manual", "razon": "Columnas antes de vigas" }, { "from": "EST 2.5", "to": "EST 2.7", "tipo": "manual", "razon": "Vigas antes de losas macizas visto" }, { "from": "EST 2.5", "to": "EST 2.8", "tipo": "manual", "razon": "Vigas antes de losas macizas" }, { "from": "EST 2.4", "to": "EST 3.1", "tipo": "manual", "razon": "Columnas antes de estructura metalica" }, { "from": "EST 2.5", "to": "EST 3.1", "tipo": "manual", "razon": "Vigas antes de estructura metalica" }, { "from": "EST 2.4", "to": "EST 2.6", "tipo": "manual", "razon": "Columnas antes de tabiques" }, { "from": "ARQ 1.3.1", "to": "EST 1.1", "tipo": "manual", "razon": "Doc tecnica aprobada antes de excavar" }, { "from": "ARQ 1.2.1", "to": "EST 1.1", "tipo": "manual", "razon": "Plan HyS aprobado antes de excavar" }, { "from": "EST 3.1", "to": "ARQ 4.1", "tipo": "manual", "razon": "Estructura metalica antes de cubierta" }, { "from": "ARQ 4.1", "to": "ARQ 4.2", "tipo": "manual", "razon": "Cubierta antes de zinquerias" }, { "from": "EST 2.7", "to": "ARQ 2.1.3", "tipo": "manual", "razon": "Losas antes de impermeabilizacion" }, { "from": "EST 4.1", "to": "ARQ 3.1", "tipo": "manual", "razon": "Mamposteria antes de revoque grueso impermeable" }, { "from": "EST 4.1", "to": "ARQ 3.2", "tipo": "manual", "razon": "Mamposteria antes de revoque grueso y fino" }, { "from": "ARQ 4.1", "to": "ICF 3.1", "tipo": "manual", "razon": "Techo cerrado antes de canarias contra incendio" }, { "from": "ARQ 4.1", "to": "ICD 1.1", "tipo": "manual", "razon": "Techo cerrado antes de bandejas portacables" }, { "from": "ARQ 4.1", "to": "ISA 1.2", "tipo": "manual", "razon": "Techo cerrado antes de canarias cloacales" }, { "from": "ARQ 4.1", "to": "ITM 1.1", "tipo": "manual", "razon": "Techo cerrado antes de equipos HVAC" }, { "from": "ARQ 5.1.1", "to": "ARQ 5.2.1", "tipo": "manual", "razon": "Contrapiso interior antes de exterior" }, { "from": "ARQ 5.1.1", "to": "ARQ 6.1.1", "tipo": "manual", "razon": "Contrapiso antes de baldosas granito" }, { "from": "ARQ 5.1.1", "to": "ARQ 10.1.1", "tipo": "manual", "razon": "Contrapiso antes de porcelanatos" }, { "from": "ARQ 5.2.1", "to": "ARQ 5.2.3", "tipo": "manual", "razon": "Contrapiso llaneado antes de estampado" }, { "from": "ARQ 3.2", "to": "ARQ 11.1.1", "tipo": "manual", "razon": "Revoque antes de ventanas" }, { "from": "ARQ 3.2", "to": "ARQ 11.2.1", "tipo": "manual", "razon": "Revoque antes de puertas madera" }, { "from": "ARQ 3.2", "to": "ARQ 11.3.1", "tipo": "manual", "razon": "Revoque antes de puertas metalicas" }, { "from": "ARQ 11.1.1", "to": "ARQ 11.4.1", "tipo": "manual", "razon": "Carpinteria antes de vidrios laminados" }, { "from": "ARQ 11.1.1", "to": "ARQ 13.1.1", "tipo": "manual", "razon": "Carpinterias antes de pintar" }, { "from": "ARQ 3.2", "to": "ARQ 13.1.1", "tipo": "manual", "razon": "Revoque fino antes de latex interior" }, { "from": "ARQ 3.2", "to": "ARQ 13.2.1", "tipo": "manual", "razon": "Revoque fino antes de latex exterior" }, { "from": "ARQ 3.1", "to": "ARQ 13.1.4", "tipo": "manual", "razon": "Revoque impermeable antes de proteccion HV" }, { "from": "ARQ 9.1", "to": "ARQ 13.1.3", "tipo": "manual", "razon": "Cielorraso antes de pintura cielorraso" }, { "from": "ARQ 8.1.1", "to": "ARQ 8.2.1", "tipo": "manual", "razon": "Tabique yeso antes de divisor box sanitario" }, { "from": "ISA 3.3", "to": "ISA 3.4", "tipo": "manual", "razon": "Canerias antes de inodoros" }, { "from": "ISA 3.3", "to": "ISA 3.5", "tipo": "manual", "razon": "Canerias antes de lavatorios" }, { "from": "ISA 3.3", "to": "ISA 3.6", "tipo": "manual", "razon": "Canerias antes de pileton" }, { "from": "ICF 1.2", "to": "ICF 4.1", "tipo": "manual", "razon": "Tablero general antes de conductores" }, { "from": "ICF 1.3", "to": "ICF 4.1", "tipo": "manual", "razon": "Tableros seccionales antes de conductores" }, { "from": "ICF 4.1", "to": "ICF 5.1", "tipo": "manual", "razon": "Conductores antes de iluminacion" }, { "from": "IGN 2.3", "to": "IGN 3.1", "tipo": "manual", "razon": "Caneria gas antes de cocina industrial" }, { "from": "IGN 2.3", "to": "IGN 3.2", "tipo": "manual", "razon": "Caneria gas antes de horno" }, { "from": "IGN 2.3", "to": "IGN 3.3", "tipo": "manual", "razon": "Caneria gas antes de termotanque" }, { "from": "IGN 1.1", "to": "IGN 2.1", "tipo": "manual", "razon": "Tanque GLP antes de canerias secundarias" }, { "from": "ITM 3.1", "to": "ITM 3.2", "tipo": "manual", "razon": "Calderas antes de radiadores" }, { "from": "ARQ 4.1", "to": "IPF 8", "tipo": "manual", "razon": "Cubierta antes de paneles solares" }, { "from": "IPF 8", "to": "IPF 2", "tipo": "manual", "razon": "Paneles antes de inversor" }, { "from": "ARQ 16.1", "to": "ARQ 16.5", "tipo": "manual", "razon": "Veredas antes de cierre perimetral" }, { "from": "PJM 3.1", "to": "PJM 2.1", "tipo": "manual", "razon": "Riego antes de arboles" }, { "from": "PJM 3.1", "to": "PJM 2.2", "tipo": "manual", "razon": "Riego antes de arbustivas" }, { "from": "PJM 3.1", "to": "PJM 2.4", "tipo": "manual", "razon": "Riego antes de cesped" }, { "from": "ARQ 6.1.1", "to": "ARQ 14.1.3", "tipo": "manual", "razon": "Pisos antes de muebles" }, { "from": "ARQ 6.1.1", "to": "ARQ 14.2.1", "tipo": "manual", "razon": "Pisos antes de bancos" }, { "from": "ARQ 13.1.1", "to": "STC 1.1", "tipo": "manual", "razon": "Pinturas antes de senaletica" }, { "from": "ARQ 13.1.1", "to": "STC 1.5", "tipo": "manual", "razon": "Pinturas antes de indicadores puertas" }, { "from": "ARQ 11.1.1", "to": "STC 1.13", "tipo": "manual", "razon": "Carpinterias antes de grafica vidrios" }, { "from": "ICF 5.1", "to": "ARQ 1.4.1", "tipo": "manual", "razon": "Iluminacion antes de manuales operacion" }, { "from": "ITM 3.2", "to": "ARQ 1.4.1", "tipo": "manual", "razon": "Radiadores antes de manuales operacion" }, { "from": "ISA 3.4", "to": "ARQ 1.4.1", "tipo": "manual", "razon": "Artefactos sanitarios antes de manuales" }, { "from": "SCI 1.1", "to": "ARQ 1.4.3", "tipo": "manual", "razon": "Matafuegos antes de documentacion conforme" }];
+  </script>
+  <script>
+
+    // ── Debounce: evita recalcular en cada tecla del input de atraso
+    var _debounceTimer = null;
+    function debounce(fn, ms) {
+      clearTimeout(_debounceTimer);
+      _debounceTimer = setTimeout(fn, ms || 200);
+    }
+
+    // ============================================================
+    // LOCALSTORAGE — PERSISTENCIA
+    // ============================================================
+    var STORAGE_KEY = 'sim_obra_uspallata_v2';
+
+    function saveState() {
+      try {
+        // Guardar solo los ítems manuales (la cascada se recalcula sola)
+        var manualItems = {};
+        var keys = Object.keys(selectedItems);
+        for (var i = 0; i < keys.length; i++) {
+          if (!selectedItems[keys[i]].isCascade) {
+            manualItems[keys[i]] = { delay: selectedItems[keys[i]].delay, promotedFromCascade: selectedItems[keys[i]].promotedFromCascade || false };
+          }
+        }
+        // Dependencias manuales solamente
+        var manualDeps = [];
+        for (var i = 0; i < deps.length; i++) {
+          if (deps[i].tipo === 'manual') manualDeps.push(deps[i]);
+        }
+        var state = {
+          manualItems: manualItems,
+          spiData: spiData,
+          manualDeps: manualDeps,
+          savedAt: new Date().toISOString()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        showSaveIndicator();
+      } catch (e) { console.warn('No se pudo guardar:', e); }
+    }
+
+    function loadState() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        var state = JSON.parse(raw);
+        // Restaurar ítems manuales
+        if (state.manualItems) {
+          var mkeys = Object.keys(state.manualItems);
+          for (var i = 0; i < mkeys.length; i++) {
+            var id = mkeys[i];
+            if (itemMap[id]) {
+              var item = itemMap[id];
+              selectedItems[id] = { id: item.id, nombre: item.nombre, incidencia: item.incidencia, meses: item.meses, delay: state.manualItems[id].delay, isCascade: false, promotedFromCascade: state.manualItems[id].promotedFromCascade || false };
+            }
+          }
+        }
+        // Restaurar SPI
+        if (state.spiData) {
+          for (var i = 0; i < state.spiData.length && i < spiData.length; i++) {
+            spiData[i] = state.spiData[i];
+          }
+        }
+        // Restaurar dependencias manuales
+        if (state.manualDeps) {
+          for (var i = 0; i < state.manualDeps.length; i++) {
+            var d = state.manualDeps[i];
+            var exists = false;
+            for (var j = 0; j < deps.length; j++) {
+              if (deps[j].from === d.from && deps[j].to === d.to) { exists = true; break; }
+            }
+            if (!exists) deps.push(d);
+          }
+        }
+        return state.savedAt || true;
+      } catch (e) { console.warn('No se pudo cargar estado:', e); return false; }
+    }
+
+    function clearState() {
+      if (!confirm('Borrar todo el estado guardado y empezar de cero?')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      selectedItems = {};
+      for (var i = 0; i < spiData.length; i++) spiData[i] = null;
+      deps = JSON.parse(JSON.stringify(AUTO_DEPS_ORIG));
+      // Limpiar inputs SPI
+      var spiRows = document.getElementById('spiInputRows');
+      if (spiRows) spiRows.innerHTML = '';
+      renderAll();
+      showToast('Estado borrado');
+    }
+
+    function showSaveIndicator() {
+      var el = document.getElementById('saveIndicator');
+      if (!el) return;
+      el.style.opacity = '1';
+      el.textContent = 'Guardado ' + new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      clearTimeout(el._timer);
+      el._timer = setTimeout(function () { el.style.opacity = '0.4'; }, 2000);
+    }
+
+    function showToast(msg) {
+      var t = document.getElementById('toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.style.opacity = '1';
+      t.style.transform = 'translateY(0)';
+      setTimeout(function () { t.style.opacity = '0'; t.style.transform = 'translateY(8px)'; }, 2500);
+    }
+
+    // ============================================================
+    // ESTADO GLOBAL
+    // ============================================================
+    var selectedItems = {};
+    var activeRubro = 'TODOS';
+    var searchTerm = '';
+    var charts = {};
+    var spiData = [];
+    var deps = [];
+    var itemMap = {};
+    var NUM_MESES = 17;
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    function init() {
+      // Inicializar spiData
+      for (var i = 0; i < NUM_MESES; i++) spiData.push(null);
+
+      // Clonar deps
+      deps = JSON.parse(JSON.stringify(AUTO_DEPS_ORIG));
+
+      // Construir mapa
+      for (var j = 0; j < PLAN_DATA.length; j++) {
+        itemMap[PLAN_DATA[j].id] = PLAN_DATA[j];
+      }
+
+      // Cargar estado guardado
+      var savedAt = loadState();
+      if (savedAt) {
+        updateCascade();
+        setTimeout(function () {
+          var ts = typeof savedAt === 'string' ? new Date(savedAt).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+          showToast('Estado restaurado' + (ts ? ' \u2014 ' + ts : ''));
+          showSaveIndicator();
+        }, 600);
+      }
+
+      buildRubroChips();
+      renderItemsList();
+      renderMetrics();
+      renderCurvaSChart();
+      renderImpactTable();
+    }
+
+    // ============================================================
+    // TABS
+    // ============================================================
+    function showTab(name) {
+      var tabs = document.querySelectorAll('.tab-content');
+      for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+      var btns = document.querySelectorAll('.tab-btn');
+      for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+      document.getElementById('tab-' + name).classList.add('active');
+      // Activar botón correspondiente
+      var allBtns = document.querySelectorAll('.tab-btn');
+      for (var i = 0; i < allBtns.length; i++) {
+        if (allBtns[i].getAttribute('data-tab') === name) allBtns[i].classList.add('active');
+      }
+      if (name === 'deps') renderDepsTable();
+      if (name === 'spi') { buildSPIInputs(); }
+    }
+
+    // ============================================================
+    // SIDEBAR
+    // ============================================================
+    function getRubro(id) { return id.split(' ')[0]; }
+
+    function buildRubroChips() {
+      var rubroSet = ['TODOS'];
+      for (var i = 0; i < PLAN_DATA.length; i++) {
+        var r = getRubro(PLAN_DATA[i].id);
+        if (rubroSet.indexOf(r) === -1) rubroSet.push(r);
+      }
+      var c = document.getElementById('rubroChips');
+      c.innerHTML = '';
+      for (var i = 0; i < rubroSet.length; i++) {
+        (function (r) {
+          var b = document.createElement('button');
+          b.className = 'chip' + (r === 'TODOS' ? ' active' : '');
+          b.textContent = r;
+          b.onclick = function () {
+            activeRubro = r;
+            var chips = document.querySelectorAll('.chip');
+            for (var j = 0; j < chips.length; j++) chips[j].classList.remove('active');
+            b.classList.add('active');
+            renderItemsList();
+          };
+          c.appendChild(b);
+        })(rubroSet[i]);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('searchInput').addEventListener('input', function (e) {
+        searchTerm = e.target.value.toLowerCase();
+        renderItemsList();
+      });
+    });
+
+    function renderItemsList() {
+      var filtered = [];
+      for (var i = 0; i < PLAN_DATA.length; i++) {
+        var it = PLAN_DATA[i];
+        var matchR = activeRubro === 'TODOS' || getRubro(it.id) === activeRubro;
+        var matchS = !searchTerm || it.id.toLowerCase().indexOf(searchTerm) >= 0 || it.nombre.toLowerCase().indexOf(searchTerm) >= 0;
+        if (matchR && matchS) filtered.push(it);
+      }
+      var c = document.getElementById('itemsList');
+      c.innerHTML = '';
+      for (var i = 0; i < filtered.length; i++) {
+        (function (item) {
+          var isSel = !!selectedItems[item.id];
+          var isCasc = isSel && selectedItems[item.id].isCascade;
+          var dur = 0;
+          var first = 0;
+          for (var j = 0; j < item.meses.length; j++) {
+            if (item.meses[j] > 0) { if (first === 0) first = j + 1; dur++; }
+          }
+          var div = document.createElement('div');
+          div.className = 'item-row' + (isCasc ? ' cascade' : isSel ? ' sel' : '');
+          var html = '<div class="item-id' + (isCasc ? ' cascade-id' : '') + '">' + item.id + '</div>';
+          html += '<div class="item-name">' + item.nombre + '</div>';
+          html += '<div class="item-foot">';
+          html += '<span class="item-inc">Inc: ' + (item.incidencia * 100).toFixed(2) + '%</span>';
+          html += '<span class="item-dur">M' + first + ' · ' + dur + 'm</span>';
+          if (isCasc) html += '<span class="cascade-tag">CASCADE</span>';
+          html += '<div class="item-check">' + (isSel ? '✓' : '') + '</div>';
+          html += '</div>';
+          div.innerHTML = html;
+          div.onclick = function () { toggleItem(item); };
+          c.appendChild(div);
+        })(filtered[i]);
+      }
+    }
+
+    // ============================================================
+    // SELECCIÓN + CASCADA
+    // ============================================================
+    function toggleItem(item) {
+      if (selectedItems[item.id]) {
+        if (selectedItems[item.id].isCascade) {
+          // Promover cascada a manual: el usuario quiere ajustar este item individualmente
+          selectedItems[item.id].isCascade = false;
+          selectedItems[item.id].promotedFromCascade = true;
+        } else {
+          // Deseleccionar item manual
+          delete selectedItems[item.id];
+          cleanOrphanCascades();
+          updateCascade();
+        }
+      } else {
+        var copy = { id: item.id, nombre: item.nombre, incidencia: item.incidencia, meses: item.meses, delay: 1, isCascade: false };
+        selectedItems[item.id] = copy;
+      }
+      updateCascade();
+      renderAll();
+      saveState();
+    }
+
+    function cleanOrphanCascades() {
+      var keys = Object.keys(selectedItems);
+      for (var i = 0; i < keys.length; i++) {
+        var id = keys[i];
+        if (!selectedItems[id] || !selectedItems[id].isCascade) continue;
+        var hasManualCause = false;
+        var manualKeys = Object.keys(selectedItems);
+        for (var j = 0; j < manualKeys.length; j++) {
+          var sid = manualKeys[j];
+          if (!selectedItems[sid] || selectedItems[sid].isCascade) continue;
+          for (var k = 0; k < deps.length; k++) {
+            if (deps[k].from === sid && deps[k].to === id) { hasManualCause = true; break; }
+          }
+          if (hasManualCause) break;
+        }
+        if (!hasManualCause) delete selectedItems[id];
+      }
+    }
+
+    function updateCascade() {
+      // Limpiar cascadas previas
+      var keys = Object.keys(selectedItems);
+      for (var i = 0; i < keys.length; i++) {
+        if (selectedItems[keys[i]] && selectedItems[keys[i]].isCascade) delete selectedItems[keys[i]];
+      }
+      // Propagar desde manuales
+      var manualKeys = Object.keys(selectedItems);
+      for (var i = 0; i < manualKeys.length; i++) {
+        var src = selectedItems[manualKeys[i]];
+        if (!src || src.isCascade || src.delay <= 0) continue;
+        propagateCascade(src.id, src.delay, {});
+      }
+    }
+
+    function getItemFinMes(itemId) {
+      // Retorna el índice (base 0) del último mes con trabajo del ítem
+      var item = itemMap[itemId];
+      if (!item) return -1;
+      for (var j = item.meses.length - 1; j >= 0; j--) {
+        if (item.meses[j] > 0) return j;
+      }
+      return -1;
+    }
+
+    function getItemIniMes(itemId) {
+      // Retorna el índice (base 0) del primer mes con trabajo del ítem
+      var item = itemMap[itemId];
+      if (!item) return -1;
+      for (var j = 0; j < item.meses.length; j++) {
+        if (item.meses[j] > 0) return j;
+      }
+      return -1;
+    }
+
+    function propagateCascade(fromId, delay, visited) {
+      if (visited[fromId]) return;
+      visited[fromId] = true;
+      var finPadre = getItemFinMes(fromId); // índice base 0
+      for (var i = 0; i < deps.length; i++) {
+        if (deps[i].from !== fromId) continue;
+        var childId = deps[i].to;
+        if (!itemMap[childId]) continue;
+        if (selectedItems[childId] && !selectedItems[childId].isCascade) continue; // manual o promovido, no pisar
+
+        // Calcular holgura libre: iniHijo - finPadre - 1
+        var iniHijo = getItemIniMes(childId);
+        var holgura = (finPadre >= 0 && iniHijo >= 0) ? Math.max(0, iniHijo - finPadre - 1) : 0;
+
+        // El atraso efectivo que se transfiere al hijo
+        var delayEfectivo = Math.max(0, delay - holgura);
+
+        var item = itemMap[childId];
+        if (delayEfectivo <= 0) {
+          // La holgura absorbió todo el atraso: el efecto dominó se frena aquí
+          continue;
+        }
+
+        if (!selectedItems[childId]) {
+          selectedItems[childId] = { id: item.id, nombre: item.nombre, incidencia: item.incidencia, meses: item.meses, delay: delayEfectivo, isCascade: true, holguraAbsorbida: holgura };
+        } else {
+          if (delayEfectivo > selectedItems[childId].delay) {
+            selectedItems[childId].delay = delayEfectivo;
+            selectedItems[childId].holguraAbsorbida = holgura;
+          }
+        }
+        propagateCascade(childId, delayEfectivo, visited);
+      }
+    }
+
+    function setDelay(id, val) {
+      if (selectedItems[id]) {
+        selectedItems[id].delay = parseFloat(val) || 0;
+        updateCascade();
+        renderSelRows();
+        renderMetrics();
+        renderImpactTable();
+        debounce(function () {
+          renderCurvaSChart();
+          calcRecovery();
+          saveState();
+        }, 250);
+      }
+    }
+
+    function removeItem(id) {
+      delete selectedItems[id];
+      cleanOrphanCascades();
+      updateCascade();
+      renderAll();
+      saveState();
+    }
+
+    function clearAll() {
+      selectedItems = {};
+      renderAll();
+    }
+
+    // ============================================================
+    // RENDER SELECTED LIST
+    // ============================================================
+    function renderSelRows() {
+      var c = document.getElementById('selRows');
+      var all = Object.values(selectedItems);
+      if (!all.length) {
+        c.innerHTML = '<div class="empty-sel">\u2190 Seleccion\u00e1 \u00edtems para simular atrasos</div>';
+        return;
+      }
+      var manual = all.filter(function (x) { return !x.isCascade; });
+      var cascade = all.filter(function (x) { return x.isCascade; });
+      var sorted = manual.concat(cascade);
+      c.innerHTML = '';
+      for (var i = 0; i < sorted.length; i++) {
+        (function (item) {
+          var row = document.createElement('div');
+          row.className = 'sel-row' + (item.isCascade ? ' is-cascade' : '');
+          var html = '<span class="sr-id">' + item.id + '</span>';
+          html += '<span class="sr-name" title="' + item.nombre + '">' + item.nombre + '</span>';
+          if (item.isCascade) {
+            // Cascada pura: mostrar delay calculado + botón para editar
+            html += '<span class="cascade-lbl">\u2191 cascada (+' + item.delay + 'm)</span>';
+            html += '<button class="edit-cascade-btn" title="Ajustar este ítem individualmente" onclick="toggleItem(itemMap[\'' + item.id + '\'])">&#x270E;</button>';
+          } else {
+            // Manual o promovido desde cascada
+            if (item.promotedFromCascade) {
+              html += '<span class="cascade-lbl" style="color:var(--accent)">\u2191 ajustado</span>';
+            }
+            html += '<div class="sr-delay"><label>Atraso:</label>';
+            html += '<input class="delay-inp" type="number" min="0" max="12" step="0.5" value="' + item.delay + '" data-id="' + item.id + '" onchange="setDelay(\'' + item.id + '\', this.value)"></div>';
+            html += '<button class="rm-btn" onclick="removeItem(\'' + item.id + '\')">&#x2715;</button>';
+          }
+          row.innerHTML = html;
+          c.appendChild(row);
+        })(sorted[i]);
+      }
+    }
+
+    // ============================================================
+    // CURVA S
+    // ============================================================
+    function calcCurvaS(delays) {
+      // Delays decimales: un delay de 0.5 significa que el item arranca a mitad del mes siguiente.
+      // Modelamos esto distribuyendo el trabajo entre dos meses adyacentes proporcionalmente.
+      var maxMesNec = NUM_MESES;
+      for (var i = 0; i < PLAN_DATA.length; i++) {
+        var item = PLAN_DATA[i];
+        var d = delays[item.id] || 0;
+        if (d > 0) {
+          for (var j = 0; j < item.meses.length; j++) {
+            if (item.meses[j] > 0) maxMesNec = Math.max(maxMesNec, Math.ceil(j + d) + 1);
+          }
+        }
+      }
+      var maxMes = maxMesNec + 3;
+      var mensual = [];
+      for (var i = 0; i < maxMes; i++) mensual.push(0);
+
+      for (var i = 0; i < PLAN_DATA.length; i++) {
+        var item = PLAN_DATA[i];
+        var d = delays[item.id] || 0;
+        for (var j = 0; j < item.meses.length; j++) {
+          if (item.meses[j] <= 0) continue;
+          var peso = item.incidencia * item.meses[j];
+          if (d === 0 || d === Math.floor(d)) {
+            // Delay entero: asignar directo
+            var idx = j + Math.floor(d);
+            if (idx < maxMes) mensual[idx] += peso;
+          } else {
+            // Delay decimal: distribuir entre mes piso y mes techo
+            var fracCeil = d - Math.floor(d);   // fraccion que va al mes siguiente
+            var fracFloor = 1 - fracCeil;
+            var idxFloor = j + Math.floor(d);
+            var idxCeil = j + Math.ceil(d);
+            if (idxFloor < maxMes) mensual[idxFloor] += peso * fracFloor;
+            if (idxCeil < maxMes) mensual[idxCeil] += peso * fracCeil;
+          }
+        }
+      }
+
+      var acum = [];
+      var suma = 0;
+      for (var i = 0; i < maxMes; i++) { suma += mensual[i]; acum.push(Math.min(suma, 1) * 100); }
+      return acum;
+    }
+
+    function getPlazoCierre(curva) {
+      for (var i = 0; i < curva.length; i++) if (curva[i] >= 99.9) return i + 1;
+      return curva.length;
+    }
+
+    function padTo(arr, len) {
+      var a = arr.slice();
+      var last = a.length > 0 ? a[a.length - 1] : 0;
+      while (a.length < len) a.push(last >= 99.9 ? 100 : last);
+      return a;
+    }
+
+    // ============================================================
+    // GRÁFICO CURVA S
+    // ============================================================
+    function renderCurvaSChart() {
+      var allDelays = {};
+      var vals = Object.values(selectedItems);
+      for (var i = 0; i < vals.length; i++) allDelays[vals[i].id] = vals[i].delay;
+
+      var orig = calcCurvaS({});
+      var sim = calcCurvaS(allDelays);
+      var hasD = false;
+      for (var i = 0; i < vals.length; i++) { if (vals[i].delay > 0) { hasD = true; break; } }
+
+      var maxLen = Math.max(orig.length, sim.length);
+      var labels = [];
+      for (var i = 0; i < maxLen; i++) labels.push('M' + (i + 1));
+
+      var datasets = [
+        { label: 'Plan original', data: padTo(orig, maxLen), borderColor: '#3aafe0', backgroundColor: 'rgba(58,175,224,0.07)', borderWidth: 2, pointRadius: 2.5, fill: true, tension: 0.3 }
+      ];
+      if (hasD) {
+        datasets.push({ label: 'Con atrasos', data: padTo(sim, maxLen), borderColor: '#e05c3a', backgroundColor: 'rgba(224,92,58,0.05)', borderWidth: 2, borderDash: [6, 3], pointRadius: 2.5, fill: true, tension: 0.3 });
+      }
+
+      var ctx = document.getElementById('curvaSChart').getContext('2d');
+      if (charts.curvaS) {
+        charts.curvaS.data.labels = labels;
+        charts.curvaS.data.datasets = datasets;
+        charts.curvaS.update('none');
+        return;
+      }
+      charts.curvaS = new Chart(ctx, {
+        type: 'line',
+        data: { labels: labels, datasets: datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+          plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: '#1d2530', borderColor: '#253040', borderWidth: 1, titleColor: '#768390', bodyColor: '#cdd9e5' }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(37,48,64,0.6)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 } } },
+            y: { min: 0, max: 100, grid: { color: 'rgba(37,48,64,0.6)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 }, callback: function (v) { return v + '%'; } } }
+          }
+        }
+      });
+    }
+
+    // ============================================================
+    // MÉTRICAS
+    // ============================================================
+    function renderMetrics() {
+      var allDelays = {};
+      var vals = Object.values(selectedItems);
+      for (var i = 0; i < vals.length; i++) allDelays[vals[i].id] = vals[i].delay;
+
+      var orig = calcCurvaS({});
+      var sim = calcCurvaS(allDelays);
+      var plazoO = getPlazoCierre(orig);
+      var plazoS = getPlazoCierre(sim);
+      var diff = plazoS - plazoO;
+      var nManual = 0, nCasc = 0, incAf = 0;
+      for (var i = 0; i < vals.length; i++) {
+        if (vals[i].isCascade) nCasc++; else nManual++;
+        incAf += vals[i].incidencia;
+      }
+      var cls = diff === 0 ? 'ok' : diff <= 2 ? 'warn' : 'danger';
+      var incCls = incAf > 0.3 ? 'danger' : incAf > 0.1 ? 'warn' : 'ok';
+      document.getElementById('metricsBar').innerHTML =
+        '<div class="metric"><div class="met-label">Plazo original</div><div class="met-val ok">' + plazoO + 'm</div><div class="met-sub">Sin atrasos</div></div>' +
+        '<div class="metric"><div class="met-label">Plazo simulado</div><div class="met-val ' + cls + '">' + plazoS + 'm</div><div class="met-sub">' + (diff === 0 ? 'Sin cambios' : '+' + diff + ' mes' + (diff > 1 ? 'es' : '')) + '</div></div>' +
+        '<div class="metric"><div class="met-label">Manuales</div><div class="met-val warn">' + nManual + '</div><div class="met-sub">Seleccionados</div></div>' +
+        '<div class="metric"><div class="met-label">Cascada</div><div class="met-val danger">' + nCasc + '</div><div class="met-sub">Propagados auto</div></div>' +
+        '<div class="metric"><div class="met-label">Incidencia</div><div class="met-val ' + incCls + '">' + (incAf * 100).toFixed(1) + '%</div><div class="met-sub">Afectada</div></div>';
+    }
+
+    // ============================================================
+    // TABLA IMPACTO
+    // ============================================================
+    function renderImpactTable() {
+      var c = document.getElementById('impactTable');
+      var items = Object.values(selectedItems).filter(function (x) { return x.delay > 0; });
+      if (!items.length) {
+        c.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text3);font-size:10px;font-family:IBM Plex Mono,monospace">Asign\u00e1 atrasos para ver el impacto</div>';
+        return;
+      }
+      items.sort(function (a, b) { return b.incidencia - a.incidencia; });
+      var html = '<table class="impact-tbl"><thead><tr><th>\u00cdtem</th><th>Nombre</th><th>Inc.</th><th>Tipo</th><th>Fin orig.</th><th>Fin sim.</th><th>Extensi\u00f3n</th></tr></thead><tbody>';
+      for (var i = 0; i < items.length; i++) {
+        var r = items[i];
+        var lastO = 0;
+        for (var j = 0; j < r.meses.length; j++) { if (r.meses[j] > 0) lastO = j + 1; }
+        var lastS = lastO + r.delay;
+        var color = r.isCascade ? '#e05c3a' : '#f7c948';
+        var tipo = r.isCascade ? '<span style="font-size:8px;padding:1px 4px;border:1px solid rgba(224,92,58,.3);background:rgba(224,92,58,.1);color:#e05c3a">cascada</span>' : '<span style="color:#f7c948">manual</span>';
+        html += '<tr><td style="color:' + color + '">' + r.id + '</td><td class="name-col">' + r.nombre + '</td><td style="color:var(--text2)">' + (r.incidencia * 100).toFixed(2) + '%</td><td>' + tipo + '</td><td style="color:#3aafe0">M' + lastO + '</td><td style="color:#e05c3a">M' + lastS + '</td><td style="color:#e05c3a;font-weight:600">+' + r.delay + 'm</td></tr>';
+      }
+      html += '</tbody></table>';
+      c.innerHTML = html;
+    }
+
+    // ============================================================
+    // RENDER ALL
+    // ============================================================
+    function renderAll() {
+      renderItemsList();
+      renderSelRows();
+      renderMetrics();
+      renderCurvaSChart();
+      renderImpactTable();
+      calcRecovery();
+    }
+
+    // ============================================================
+    // SPI
+    // ============================================================
+    function buildSPIInputs() {
+      var c = document.getElementById('spiInputRows');
+      if (c.children.length > 0) return;
+      var curvaPlan = calcCurvaS({});
+      for (var m = 0; m < NUM_MESES; m++) {
+        (function (mes) {
+          var row = document.createElement('div');
+          row.className = 'spi-mes-row';
+          var planVal = curvaPlan[mes].toFixed(1);
+          row.innerHTML =
+            '<span class="spi-mes-label">Mes ' + (mes + 1) + '</span>' +
+            '<input class="spi-inp' + (spiData[mes] !== null ? ' has-val' : '') + '" type="number" min="0" max="100" step="0.1" placeholder="Plan: ' + planVal + '%" ' +
+            (spiData[mes] !== null ? 'value="' + spiData[mes] + '"' : '') +
+            ' onchange="spiData[' + mes + '] = this.value !== \'\' ? parseFloat(this.value) : null; this.className = \'spi-inp\' + (spiData[' + mes + '] !== null ? \' has-val\' : \'\')">' +
+            '<span class="spi-pct">%</span>';
+          c.appendChild(row);
+        })(m);
+      }
+    }
+
+    function calcSPI() {
+      var curvaPlan = calcCurvaS({});
+      var lastReal = -1;
+      for (var i = 0; i < NUM_MESES; i++) { if (spiData[i] !== null) lastReal = i; }
+      if (lastReal < 0) { alert('Ingres\u00e1 al menos un mes de avance real.'); return; }
+
+      var realAcum = spiData[lastReal];
+      var planAcum = curvaPlan[lastReal];
+      var spi = planAcum > 0 ? realAcum / planAcum : 1;
+
+      // Proyección
+      var proyData = [];
+      for (var i = 0; i <= lastReal; i++) proyData.push(spiData[i] !== null ? spiData[i] : null);
+      var proyAccum = realAcum;
+      var mesProyFin = lastReal + 1;
+      for (var i = lastReal + 1; i < NUM_MESES + 15; i++) {
+        var ritmoPlan = i < curvaPlan.length ? curvaPlan[i] - curvaPlan[i - 1] : 0;
+        proyAccum += ritmoPlan * spi;
+        proyData.push(Math.min(proyAccum, 100));
+        if (proyAccum >= 99.9) { mesProyFin = i + 1; break; }
+        mesProyFin = i + 1;
+      }
+
+      // SPI mensual
+      var spiMensual = [];
+      for (var i = 0; i <= lastReal; i++) {
+        if (spiData[i] === null) { spiMensual.push(null); continue; }
+        var pv = curvaPlan[i];
+        spiMensual.push(pv > 0 ? parseFloat((spiData[i] / pv).toFixed(3)) : 1);
+      }
+
+      // Métricas SPI
+      var spiEl = document.getElementById('spiVal');
+      spiEl.textContent = spi.toFixed(3);
+      spiEl.className = 'met-val ' + (spi >= 0.95 ? 'ok' : spi >= 0.8 ? 'warn' : 'danger');
+      document.getElementById('spiPlan').textContent = planAcum.toFixed(1) + '%';
+      var endEl = document.getElementById('spiEnd');
+      endEl.textContent = 'Mes ' + mesProyFin;
+      var diffFin = mesProyFin - NUM_MESES;
+      endEl.className = 'met-val ' + (diffFin <= 0 ? 'ok' : diffFin <= 2 ? 'warn' : 'danger');
+
+      renderSPICharts(curvaPlan, proyData, spiMensual, lastReal, mesProyFin);
+      saveState();
+    }
+
+    function renderSPICharts(curvaPlan, proyData, spiMensual, lastReal, mesProyFin) {
+      var maxLen = Math.max(NUM_MESES, mesProyFin + 1);
+      var labels = [];
+      for (var i = 0; i < maxLen; i++) labels.push('M' + (i + 1));
+      var planPad = padTo(curvaPlan, maxLen);
+
+      // Dataset real (solo hasta lastReal)
+      var realArr = [];
+      for (var i = 0; i < maxLen; i++) realArr.push(i <= lastReal && spiData[i] !== null ? spiData[i] : null);
+
+      // Dataset proyección (desde lastReal+1)
+      var proyArr = [];
+      for (var i = 0; i < maxLen; i++) {
+        if (i < proyData.length) proyArr.push(i > lastReal ? proyData[i] : null);
+        else proyArr.push(null);
+      }
+      // Conectar en lastReal
+      if (lastReal >= 0 && lastReal < proyArr.length) proyArr[lastReal] = spiData[lastReal];
+
+      var datasets1 = [
+        { label: 'Plan original', data: planPad, borderColor: '#3aafe0', backgroundColor: 'rgba(58,175,224,0.06)', borderWidth: 2, pointRadius: 2, fill: true, tension: 0.3 },
+        { label: 'Avance real', data: realArr, borderColor: '#3fb950', backgroundColor: 'rgba(63,185,80,0.08)', borderWidth: 2, pointRadius: 3, fill: true, tension: 0.3, spanGaps: false },
+        { label: 'Proyecci\u00f3n', data: proyArr, borderColor: '#f7c948', backgroundColor: 'rgba(247,201,72,0.04)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 1.5, fill: true, tension: 0.3, spanGaps: false }
+      ];
+
+      var opts = {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+        plugins: { legend: { labels: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 } } }, tooltip: { backgroundColor: '#1d2530', borderColor: '#253040', borderWidth: 1, bodyColor: '#cdd9e5' } },
+        scales: { x: { grid: { color: 'rgba(37,48,64,0.5)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 } } }, y: { min: 0, max: 100, grid: { color: 'rgba(37,48,64,0.5)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 }, callback: function (v) { return v + '%'; } } } }
+      };
+
+      var ctx1 = document.getElementById('spiCurveChart').getContext('2d');
+      if (charts.spiCurve) { charts.spiCurve.data.labels = labels; charts.spiCurve.data.datasets = datasets1; charts.spiCurve.update('none'); }
+      else charts.spiCurve = new Chart(ctx1, { type: 'line', data: { labels: labels, datasets: datasets1 }, options: opts });
+
+      // Bar SPI
+      var spiColors = spiMensual.map(function (v) { return v === null ? 'transparent' : v >= 0.95 ? '#3fb950' : v >= 0.8 ? '#f7c948' : '#e05c3a'; });
+      var spiLabels = [];
+      for (var i = 0; i < spiMensual.length; i++) spiLabels.push('M' + (i + 1));
+      var ctx2 = document.getElementById('spiBarChart').getContext('2d');
+      if (charts.spiBar) { charts.spiBar.data.labels = spiLabels; charts.spiBar.data.datasets[0].data = spiMensual; charts.spiBar.data.datasets[0].backgroundColor = spiColors; charts.spiBar.update('none'); }
+      else charts.spiBar = new Chart(ctx2, {
+        type: 'bar',
+        data: { labels: spiLabels, datasets: [{ label: 'SPI', data: spiMensual, backgroundColor: spiColors, borderRadius: 2 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+          plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1d2530', borderColor: '#253040', borderWidth: 1, bodyColor: '#cdd9e5', callbacks: { label: function (c) { return ' SPI: ' + c.parsed.y.toFixed(3); } } } },
+          scales: { x: { grid: { color: 'rgba(37,48,64,0.5)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 } } }, y: { min: 0, max: 1.5, grid: { color: 'rgba(37,48,64,0.5)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 } } } }
+        }
+      });
+    }
+
+    // ============================================================
+    // DEPENDENCIAS
+    // ============================================================
+    function renderDepsTable() {
+      var tbody = document.getElementById('depsTableBody');
+      var html = '';
+      for (var i = 0; i < deps.length; i++) {
+        var d = deps[i];
+        var nameFrom = itemMap[d.from] ? itemMap[d.from].nombre.substring(0, 35) : '';
+        var nameTo = itemMap[d.to] ? itemMap[d.to].nombre.substring(0, 35) : '';
+        var tipoClass = d.tipo === 'jerarquia' ? 'jerarquia' : d.tipo === 'manual' ? 'manual' : 'rubro';
+        html += '<tr>';
+        html += '<td class="dep-from">' + d.from + '</td>';
+        html += '<td class="dep-to">' + d.to + '</td>';
+        html += '<td><span class="dep-tipo ' + tipoClass + '">' + d.tipo + '</span></td>';
+        html += '<td style="color:var(--text2)">' + nameFrom + '</td>';
+        html += '<td style="color:var(--text2)">' + nameTo + '</td>';
+        html += '<td><button class="dep-del-btn" onclick="deleteDep(' + i + ')">&#x2715;</button></td>';
+        html += '</tr>';
+      }
+      tbody.innerHTML = html;
+      document.getElementById('depCount').textContent = deps.length + ' dependencias';
+      buildDepSelects();
+    }
+
+    function buildDepSelects() {
+      var selects = ['depFromSel', 'depToSel'];
+      for (var s = 0; s < selects.length; s++) {
+        var sel = document.getElementById(selects[s]);
+        if (sel.options.length > 1) continue;
+        sel.innerHTML = '<option value="">-- Seleccion\u00e1 --</option>';
+        for (var i = 0; i < PLAN_DATA.length; i++) {
+          var opt = document.createElement('option');
+          opt.value = PLAN_DATA[i].id;
+          opt.textContent = PLAN_DATA[i].id + ' \u00b7 ' + PLAN_DATA[i].nombre.substring(0, 40);
+          sel.appendChild(opt);
+        }
+      }
+    }
+
+    function deleteDep(idx) {
+      deps.splice(idx, 1);
+      renderDepsTable();
+      updateCascade();
+      renderAll();
+      saveState();
+    }
+
+    function addManualDep() {
+      var from = document.getElementById('depFromSel').value;
+      var to = document.getElementById('depToSel').value;
+      if (!from || !to || from === to) { alert('Seleccion\u00e1 dos \u00edtems distintos.'); return; }
+      for (var i = 0; i < deps.length; i++) {
+        if (deps[i].from === from && deps[i].to === to) { alert('Esa dependencia ya existe.'); return; }
+      }
+      deps.push({ from: from, to: to, tipo: 'manual' });
+      renderDepsTable();
+      updateCascade();
+      renderAll();
+      saveState();
+    }
+
+    // ============================================================
+    // PLAN DE RECUPERACIÓN — con Crash Limit y Re-baselining
+    // ============================================================
+
+    var CRASH_LIMIT = 50; // % máximo de aceleración físicamente aceptable
+
+    // Construye la curva de recuperación hacia un mes destino (índice base 0)
+    // Retorna null si mesDestino < mesInicio
+    function buildRecCurve(delayCurve, origCurve, mesInicio, mesDestino) {
+      if (mesDestino < mesInicio) return null;
+      var curva = [];
+      for (var m = 0; m <= mesInicio; m++) {
+        curva.push(m < delayCurve.length ? delayCurve[m] : 100);
+      }
+      var valorPartida = curva[mesInicio];
+      var mesesDisp = mesDestino - mesInicio;
+      if (mesesDisp <= 0) {
+        curva[mesInicio] = 100;
+        return curva;
+      }
+      // Construir pendiente guía desde la curva original en la ventana disponible
+      var pendiente = [];
+      for (var m = mesInicio; m < mesDestino; m++) {
+        var v0 = m < origCurve.length ? origCurve[m] : 100;
+        var v1 = (m + 1) < origCurve.length ? origCurve[m + 1] : 100;
+        pendiente.push(Math.max(0, v1 - v0));
+      }
+      var sumP = pendiente.reduce(function(a,b){return a+b;}, 0);
+      var necesario = 100 - valorPartida;
+      for (var k = 0; k < mesesDisp; k++) {
+        var frac = sumP > 0 ? pendiente[k] / sumP : 1 / mesesDisp;
+        var prev = curva[curva.length - 1];
+        curva.push(Math.min(100, prev + frac * necesario));
+      }
+      curva[mesDestino] = 100;
+      return curva;
+    }
+
+    // Calcula el % de aceleración PICO que pide una curva de recuperación
+    // comparando su pendiente mensual con la pendiente de la curva original
+    function calcPicoCrash(recCurve, origCurve) {
+      var pico = 0;
+      for (var m = 1; m < recCurve.length; m++) {
+        if (recCurve[m] === null || recCurve[m - 1] === null) continue;
+        var deltaRec = recCurve[m] - recCurve[m - 1];
+        var deltaOrig = m < origCurve.length ? (origCurve[m] - origCurve[m - 1]) : 0;
+        if (deltaOrig > 0.01 && deltaRec > deltaOrig) {
+          var pct = Math.round((deltaRec / deltaOrig - 1) * 100);
+          if (pct > pico) pico = pct;
+        }
+      }
+      return pico;
+    }
+
+    function calcRecovery(modoRebaseline) {
+      var allDelays = {};
+      var vals = Object.values(selectedItems);
+      for (var i = 0; i < vals.length; i++) allDelays[vals[i].id] = vals[i].delay;
+      var hasDelay = vals.some(function (x) { return x.delay > 0; });
+
+      var panel = document.getElementById('recoveryPanel');
+      if (!panel) return;
+
+      if (!hasDelay) {
+        panel.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text3);font-family:IBM Plex Mono,monospace;font-size:10px">Asigná atrasos para ver el plan de recuperación</div>';
+        updateChartWithRecovery(calcCurvaS({}), null, null, -1);
+        return;
+      }
+
+      var origCurve = calcCurvaS({});
+      var delayCurve = calcCurvaS(allDelays);
+      var mesFinOriginal = getPlazoCierre(origCurve) - 1; // índice base 0
+
+      // Encontrar inicio del retraso
+      var mesInicioRec = -1;
+      for (var m = 0; m < origCurve.length; m++) {
+        if (origCurve[m] - delayCurve[m] > 0.001) { mesInicioRec = m; break; }
+      }
+
+      var maxLen = Math.max(origCurve.length, delayCurve.length);
+      var brechaMax = 0;
+      for (var m = 0; m < maxLen; m++) {
+        var diff = (m < origCurve.length ? origCurve[m] : 100) - (m < delayCurve.length ? delayCurve[m] : 100);
+        if (diff > brechaMax) brechaMax = diff;
+      }
+
+      // ── Evaluación de ítems afectados (causantes + sucesores)
+      var causantes = vals.filter(function (x) { return !x.isCascade && x.delay > 0; });
+      var sucesores = vals.filter(function (x) { return x.isCascade && x.delay > 0; });
+      var sucData = [];
+      var hayCriticos = false;
+      var totalExtra = 0, countExtra = 0;
+
+      for (var i = 0; i < sucesores.length; i++) {
+        var it = sucesores[i];
+        var ini = -1, fin = -1;
+        for (var j = 0; j < it.meses.length; j++) {
+          if (it.meses[j] > 0) { if (ini < 0) ini = j; fin = j; }
+        }
+        if (ini < 0) continue;
+        var durOrig = fin - ini + 1;
+        var durDisp = durOrig - it.delay;
+        var pct = durDisp > 0 ? Math.round((durOrig / durDisp - 1) * 100) : 999;
+        var critico = durDisp <= 0;
+        if (critico) hayCriticos = true;
+        totalExtra += critico ? 200 : pct;
+        countExtra++;
+        sucData.push({ it: it, ini: ini, fin: fin, durOrig: durOrig, durDisp: durDisp, pct: pct, critico: critico });
+      }
+      sucData.sort(function (a, b) { return b.pct - a.pct; });
+
+      var avgExtra = countExtra > 0 ? Math.min(Math.round(totalExtra / countExtra), 300) : 0;
+
+      // ── CONSTRUIR CURVA DE RECUPERACIÓN
+      var recCurve = null;
+      var mesConvergeReal = -1;
+      var picoCrash = 0;
+      var esRebaseline = false;
+      var mesFinElegido = mesFinOriginal;
+
+      if (mesInicioRec >= 0) {
+        // Intento 1: recuperar en plazo original
+        var curvaIntento = buildRecCurve(delayCurve, origCurve, mesInicioRec, mesFinOriginal);
+        picoCrash = calcPicoCrash(curvaIntento, origCurve);
+
+        if (!modoRebaseline && picoCrash <= CRASH_LIMIT) {
+          // ✅ RECOVERY: es físicamente posible
+          recCurve = curvaIntento;
+          mesConvergeReal = mesFinOriginal;
+          esRebaseline = false;
+        } else {
+          // ❌ Supera el Crash Limit — buscar el primer mes con extensión donde pico ≤ CRASH_LIMIT
+          esRebaseline = true;
+          var encontrado = false;
+          for (var ext = 1; ext <= 12; ext++) {
+            var mesDestTry = mesFinOriginal + ext;
+            var curvaTry = buildRecCurve(delayCurve, origCurve, mesInicioRec, mesDestTry);
+            var picoTry = calcPicoCrash(curvaTry, origCurve);
+            if (picoTry <= CRASH_LIMIT) {
+              recCurve = curvaTry;
+              mesFinElegido = mesDestTry;
+              mesConvergeReal = mesDestTry;
+              picoCrash = picoTry;
+              encontrado = true;
+              break;
+            }
+          }
+          if (!encontrado) {
+            // Caso extremo: ni con 12 meses extra baja del límite — usar +12
+            mesFinElegido = mesFinOriginal + 12;
+            recCurve = buildRecCurve(delayCurve, origCurve, mesInicioRec, mesFinElegido);
+            mesConvergeReal = mesFinElegido;
+            picoCrash = calcPicoCrash(recCurve, origCurve);
+          }
+        }
+      }
+
+      // ── TABLA DE ÍTEMS
+      var MAXROWS = 8;
+      var tableRows = '';
+
+      for (var i = 0; i < causantes.length; i++) {
+        var it = causantes[i];
+        var ini = -1, fin = -1;
+        for (var j = 0; j < it.meses.length; j++) {
+          if (it.meses[j] > 0) { if (ini < 0) ini = j; fin = j; }
+        }
+        var tieneTrabajoFuturo = false;
+        if (ini >= 0) {
+          for (var j = ini + Math.ceil(it.delay); j <= fin; j++) {
+            if (j < it.meses.length && it.meses[j] > 0) { tieneTrabajoFuturo = true; break; }
+          }
+        }
+        var tag = '<span style="font-size:8px;color:var(--accent);border:1px solid rgba(247,201,72,.3);padding:1px 5px;border-radius:2px">causante</span>';
+        if (!tieneTrabajoFuturo) {
+          tableRows += '<tr><td style="color:var(--accent)">' + it.id + '</td><td class="name-col">' + it.nombre + '</td>' +
+            '<td>' + tag + '</td><td style="color:var(--red)">+' + it.delay + 'm</td>' +
+            '<td style="color:var(--text3);font-size:9px">ya terminado en M' + (fin + 1) + '</td><td style="color:var(--text3)">—</td></tr>';
+        } else {
+          var durO = fin - ini + 1, durD = durO - it.delay;
+          var pC = durD > 0 ? Math.round((durO / durD - 1) * 100) : 999;
+          var clC = pC < 15 ? 'ok' : pC < 40 ? 'warn' : 'danger';
+          tableRows += '<tr><td style="color:var(--accent)">' + it.id + '</td><td class="name-col">' + it.nombre + '</td>' +
+            '<td>' + tag + '</td><td style="color:var(--red)">+' + it.delay + 'm</td>' +
+            '<td><span style="color:var(--' + clC + ');font-weight:600">+' + pC + '%</span></td>' +
+            '<td style="color:var(--text2)">M' + (ini + Math.ceil(it.delay) + 1) + ' a M' + (fin + 1) + '</td></tr>';
+        }
+      }
+
+      var shown = 0;
+      for (var i = 0; i < sucData.length && shown < MAXROWS; i++) {
+        var d = sucData[i];
+        var holguraInfo = (d.it.holguraAbsorbida > 0)
+          ? '<span style="font-size:8px;color:var(--green);margin-left:4px">(holgura: ' + d.it.holguraAbsorbida + 'm)</span>'
+          : '';
+        var tag = '<span style="font-size:8px;color:var(--red);border:1px solid rgba(224,92,58,.3);padding:1px 5px;border-radius:2px">sucesor</span>';
+        var accelCell = d.critico
+          ? '<span style="color:var(--red);font-weight:700">CRÍTICO</span><span style="color:var(--text3);font-size:9px"> sin margen</span>'
+          : '<span style="color:var(--' + (d.pct < 15 ? 'ok' : d.pct < 40 ? 'warn' : 'danger') + ');font-weight:600">+' + d.pct + '%</span>';
+        tableRows += '<tr><td style="color:var(--red)">' + d.it.id + '</td><td class="name-col">' + d.it.nombre + holguraInfo + '</td>' +
+          '<td>' + tag + '</td><td style="color:var(--red)">+' + d.it.delay + 'm</td>' +
+          '<td>' + accelCell + '</td>' +
+          '<td style="color:var(--text2)">M' + (d.ini + Math.ceil(d.it.delay) + 1) + ' a M' + (d.fin + 1) + '</td></tr>';
+        shown++;
+      }
+      if (sucData.length > MAXROWS) {
+        tableRows += '<tr><td colspan="6" style="text-align:center;color:var(--text3);font-size:9px;font-family:IBM Plex Mono,monospace;padding:5px 0">' +
+          '... y ' + (sucData.length - MAXROWS) + ' sucesores más con menor impacto</td></tr>';
+      }
+
+      // ── BANNER superior de la zona de recuperación
+      var extMeses = mesFinElegido - mesFinOriginal; // 0 si es Recovery puro
+      var avgCls = avgExtra < 15 ? 'ok' : avgExtra < 40 ? 'warn' : 'danger';
+      var picoCls = picoCrash <= CRASH_LIMIT ? (picoCrash < 30 ? 'ok' : 'warn') : 'danger';
+
+      // Bloque modo: RECOVERY (verde) o REBASELINE (naranja/amarillo)
+      var modoBlock = '';
+      if (!esRebaseline) {
+        // Modo RECOVERY
+        modoBlock =
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 10px;background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:2px">' +
+          '<span style="font-size:10px;font-family:IBM Plex Mono,monospace;font-weight:700;color:var(--green)">✓ RECOVERY</span>' +
+          '<span style="font-size:10px;color:var(--text2)">Posible recuperar el plazo original</span>' +
+          '<span style="margin-left:auto;font-size:10px;color:var(--text2)">Pico de crash: <b style="color:var(--' + picoCls + ')">' + picoCrash + '%</b> / ' + CRASH_LIMIT + '% límite</span>' +
+          '</div>';
+      } else {
+        // Modo REBASELINE
+        modoBlock =
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 10px;background:rgba(247,201,72,0.07);border:1px solid rgba(247,201,72,0.35);border-radius:2px">' +
+          '<span style="font-size:10px;font-family:IBM Plex Mono,monospace;font-weight:700;color:var(--accent)">⚠ RE-BASELINE</span>' +
+          '<span style="font-size:10px;color:var(--text2)">Plazo original físicamente imposible — Crash pico >' + CRASH_LIMIT + '%</span>' +
+          '<button onclick="calcRecovery(false)" style="margin-left:auto;font-family:IBM Plex Mono,monospace;font-size:9px;padding:2px 8px;border:1px solid rgba(58,175,224,0.4);background:transparent;color:var(--blue);cursor:pointer" title="Forzar curva hacia plazo original (ignorar límite físico)">↩ Forzar recuperación</button>' +
+          '</div>';
+      }
+
+      // Bloque de métricas del banner
+      var finLabel = esRebaseline
+        ? '<b style="color:var(--accent)">Mes ' + (mesFinElegido + 1) + '</b><span style="font-size:9px;color:var(--text3)"> (+' + extMeses + 'm)</span>'
+        : '<b style="color:var(--green)">Mes ' + (mesFinOriginal + 1) + '</b>';
+
+      var bannerMetrics =
+        '<div style="display:flex;align-items:center;gap:10px;padding:6px 0 10px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:8px">' +
+        '<span style="font-size:11px;color:var(--text)">Fin proyectado: ' + finLabel + '</span>' +
+        '<span style="color:var(--border)">|</span>' +
+        '<span style="font-size:11px;color:var(--text)">Aceleración prom.: <b style="color:var(--' + avgCls + ')">+' + avgExtra + '%</b></span>' +
+        '<span style="color:var(--border)">|</span>' +
+        '<span style="font-size:11px;color:var(--text)">Crash pico: <b style="color:var(--' + picoCls + ')">' + picoCrash + '%</b></span>' +
+        '<span style="color:var(--border)">|</span>' +
+        '<span style="font-size:11px;color:var(--text)">Brecha: <b style="color:var(--red)">' + brechaMax.toFixed(1) + '%</b></span>' +
+        (esRebaseline ? '' : (hayCriticos ? '<span style="font-size:9px;color:var(--red);background:rgba(224,92,58,.1);border:1px solid rgba(224,92,58,.3);padding:2px 6px">⚠ CRÍTICO</span>' : '')) +
+        '</div>';
+
+      panel.innerHTML = modoBlock + bannerMetrics +
+        (tableRows
+          ? '<table class="impact-tbl"><thead><tr><th>Ítem</th><th>Nombre</th><th>Rol</th><th>Atraso</th><th>Aceleración</th><th>Ventana</th></tr></thead><tbody>' + tableRows + '</tbody></table>'
+          : '<div style="font-size:10px;color:var(--text3);padding:4px">Seleccioná un ítem manual para ver el plan de acción.</div>'
+        );
+
+      // Color de la curva verde varía según modo
+      var recColor = esRebaseline ? '#f7c948' : '#3fb950';      // amarillo=rebaseline, verde=recovery
+      var recColorBg = esRebaseline ? 'rgba(247,201,72,0.06)' : 'rgba(63,185,80,0.06)';
+
+      updateChartWithRecovery(origCurve, delayCurve, recCurve, mesConvergeReal, recColor, recColorBg, esRebaseline ? 'Re-baseline' : 'Recuperación');
+    }
+
+    function updateChartWithRecovery(origCurve, delayCurve, recAccum, mesConvergeIdx, recColor, recColorBg, recLabel) {
+      if (!charts.curvaS) return;
+      recColor = recColor || '#3fb950';
+      recColorBg = recColorBg || 'rgba(63,185,80,0.06)';
+      recLabel = recLabel || 'Recuperación';
+
+      var maxLen = origCurve ? origCurve.length : NUM_MESES;
+      if (delayCurve && delayCurve.length > maxLen) maxLen = delayCurve.length;
+      if (recAccum && recAccum.length > maxLen) maxLen = recAccum.length;
+
+      var labels = [];
+      for (var i = 0; i < maxLen; i++) labels.push('M' + (i + 1));
+
+      var datasets = [];
+
+      // Curva original siempre presente
+      if (origCurve) {
+        datasets.push({
+          label: 'Plan original',
+          data: padTo(origCurve, maxLen),
+          borderColor: '#3aafe0',
+          backgroundColor: 'rgba(58,175,224,0.07)',
+          borderWidth: 2, pointRadius: 2.5, fill: true, tension: 0.3
+        });
+      }
+
+      // Curva con atrasos: si hay recuperación, se divide en dos segmentos
+      // - Segmento "superado" (hasta mesConvergeIdx): rojo muy claro / gris
+      // - Segmento "todavía retrasado" (desde mesConvergeIdx): rojo normal
+      if (delayCurve) {
+        var tieneRecuperacion = recAccum && mesConvergeIdx >= 0;
+
+        if (tieneRecuperacion) {
+          // Parte "ya superada" — gris pálido/rojo muy claro
+          var delaySupData = [];
+          for (var i = 0; i < maxLen; i++) {
+            delaySupData.push(i <= mesConvergeIdx ? (i < delayCurve.length ? delayCurve[i] : 100) : null);
+          }
+          datasets.push({
+            label: 'Atraso (superado)',
+            data: delaySupData,
+            borderColor: 'rgba(224,92,58,0.25)',
+            backgroundColor: 'rgba(224,92,58,0.03)',
+            borderWidth: 1.5,
+            borderDash: [4, 4],
+            pointRadius: 1.5,
+            fill: false,
+            tension: 0.3,
+            spanGaps: false
+          });
+
+          // Parte "todavía retrasada" — rojo normal (antes del cruce)
+          var delayActData = [];
+          for (var i = 0; i < maxLen; i++) {
+            delayActData.push(i >= mesConvergeIdx ? (i < delayCurve.length ? delayCurve[i] : 100) : null);
+          }
+          // Solo agregar si hay datos "todavía retrasados" reales (después del mesConverge puede haber poca diferencia)
+          var hayDesfasePosterior = false;
+          for (var i = mesConvergeIdx; i < Math.min(maxLen, delayCurve.length); i++) {
+            if (Math.abs((origCurve[i] || 100) - delayCurve[i]) > 0.5) { hayDesfasePosterior = true; break; }
+          }
+          if (hayDesfasePosterior) {
+            datasets.push({
+              label: 'Con atrasos',
+              data: delayActData,
+              borderColor: '#e05c3a',
+              backgroundColor: 'rgba(224,92,58,0.05)',
+              borderWidth: 2,
+              borderDash: [6, 3],
+              pointRadius: 2,
+              fill: false,
+              tension: 0.3,
+              spanGaps: false
+            });
+          }
+        } else {
+          // Sin recuperación: curva de atraso completa en rojo
+          datasets.push({
+            label: 'Con atrasos',
+            data: padTo(delayCurve, maxLen),
+            borderColor: '#e05c3a',
+            backgroundColor: 'rgba(224,92,58,0.05)',
+            borderWidth: 2,
+            borderDash: [6, 3],
+            pointRadius: 2.5,
+            fill: false,
+            tension: 0.3
+          });
+        }
+      }
+
+      // Curva de recuperación (verde)
+      if (recAccum) {
+        var recData = [];
+        for (var i = 0; i < maxLen; i++) {
+          recData.push(recAccum[i] !== undefined && recAccum[i] !== null ? recAccum[i] : null);
+        }
+        datasets.push({
+          label: recLabel,
+          data: recData,
+          borderColor: recColor,
+          backgroundColor: recColorBg,
+          borderWidth: 2.5,
+          borderDash: [4, 3],
+          pointRadius: 2,
+          fill: false,
+          tension: 0.3,
+          spanGaps: false
+        });
+      }
+
+      charts.curvaS.data.labels = labels;
+      charts.curvaS.data.datasets = datasets;
+      charts.curvaS.update('none');
+    }
+
+    // ── GRÁFICO EXPANDIDO (overlay pantalla completa)
+    var chartBig = null;
+
+    function toggleChartOverlay() {
+      var overlay = document.getElementById('chartOverlay');
+      if (!overlay) return;
+      var isOpen = overlay.classList.contains('open');
+      if (isOpen) {
+        overlay.classList.remove('open');
+        if (chartBig) { chartBig.destroy(); chartBig = null; }
+      } else {
+        overlay.classList.add('open');
+        // Copiar datos del chart principal al canvas grande
+        setTimeout(function () {
+          var canvas = document.getElementById('curvaSChartBig');
+          if (!canvas || !charts.curvaS) return;
+          var src = charts.curvaS;
+          chartBig = new Chart(canvas, {
+            type: 'line',
+            data: JSON.parse(JSON.stringify(src.data)),
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  mode: 'index', intersect: false,
+                  backgroundColor: 'rgba(18,22,30,.95)',
+                  titleColor: '#f7c948', bodyColor: '#c9d1d9',
+                  borderColor: 'rgba(255,255,255,.1)', borderWidth: 1,
+                  callbacks: {
+                    label: function (ctx) {
+                      return ctx.dataset.label + ': ' + (ctx.parsed.y !== null ? ctx.parsed.y.toFixed(1) + '%' : '—');
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#8b949e', font: { family: 'IBM Plex Mono', size: 11 } } },
+                y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#8b949e', font: { family: 'IBM Plex Mono', size: 11 }, callback: function (v) { return v + '%'; } } }
+              }
+            }
+          });
+        }, 50);
+      }
+    }
+
+    // Cerrar overlay con ESC
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        var overlay = document.getElementById('chartOverlay');
+        if (overlay && overlay.classList.contains('open')) toggleChartOverlay();
+      }
+    });
+
+  </script>
+  <script>
+    window.addEventListener('load', function () { init(); });
+  </script>
+  <!-- OVERLAY GRÁFICO EXPANDIDO -->
+  <div class="chart-overlay" id="chartOverlay">
+    <div style="display:flex;align-items:center;margin-bottom:12px;flex-shrink:0">
+      <span style="color:var(--text);font-size:13px;font-weight:600">Curva S &mdash; Avance F&iacute;sico
+        Acumulado</span>
+      <div class="legend" style="margin-left:24px">
+        <div class="leg-item">
+          <div class="leg-line" style="background:var(--blue)"></div>Plan original
+        </div>
+        <div class="leg-item">
+          <div class="leg-line" style="background:rgba(224,92,58,0.35)"></div>Atraso (superado)
+        </div>
+        <div class="leg-item">
+          <div class="leg-line" style="background:var(--red)"></div>Con atrasos
+        </div>
+        <div class="leg-item">
+          <div class="leg-line" style="background:var(--green)"></div>Recuperación
+        </div>
+        <div class="leg-item">
+          <div class="leg-line" style="background:var(--accent)"></div>Re-baseline
+        </div>
+      </div>
+      <button class="expand-btn" onclick="toggleChartOverlay()" style="margin-left:auto">&#x2715; Cerrar</button>
+    </div>
+    <div class="chart-overlay-inner">
+      <canvas id="curvaSChartBig"></canvas>
+    </div>
+  </div>
+</body>
+
+</html>
