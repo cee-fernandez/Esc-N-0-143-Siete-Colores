@@ -973,6 +973,94 @@
       border-color: var(--accent)
     }
 
+
+    .tab-btn:focus-visible,
+    .btn-sm:focus-visible,
+    .btn-primary:focus-visible,
+    .expand-btn:focus-visible,
+    .chip:focus-visible,
+    .search:focus-visible,
+    .dep-select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px
+    }
+
+    @media (max-width: 1100px) {
+      body {
+        overflow: auto
+      }
+
+      .app {
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 48px)
+      }
+
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        max-height: 40vh
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .spi-layout {
+        flex-direction: column
+      }
+
+      .spi-input-panel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border)
+      }
+    }
+
+    @media (max-width: 700px) {
+      .header {
+        height: auto;
+        flex-wrap: wrap;
+        padding: 10px 12px;
+        gap: 8px
+      }
+
+      .header-tabs {
+        width: 100%;
+        flex-wrap: wrap
+      }
+
+      .tab-btn {
+        padding: 5px 9px
+      }
+
+      .chart-zone {
+        height: 260px;
+        padding-left: 10px;
+        padding-right: 10px
+      }
+
+      .chart-hdr {
+        flex-wrap: wrap;
+        gap: 8px
+      }
+
+      .legend {
+        gap: 8px;
+        flex-wrap: wrap
+      }
+
+      .deps-layout,
+      .spi-main {
+        padding: 10px
+      }
+
+      .spi-metrics {
+        grid-template-columns: 1fr
+      }
+    }
+
     ::-webkit-scrollbar {
       width: 4px;
       height: 4px
@@ -997,14 +1085,14 @@
       <p>Esc. N&ordm; 0-143 Cerro Siete Colores &middot; APOLO SUR SA &middot; Base: Agosto 2025 &middot; 226
         &iacute;tems &middot; 17 meses</p>
     </div>
-    <div class="header-tabs">
+    <div class="header-tabs" role="tablist" aria-label="Secciones principales">
       <span id="saveIndicator"
         style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--green);opacity:0.4;transition:opacity .4s;margin-right:8px;white-space:nowrap">&#x25CF;
         Guardado</span>
-      <button class="tab-btn active" data-tab="sim" onclick="showTab('sim')">&#x29DF; Simulador</button>
-      <button class="tab-btn" data-tab="spi" onclick="showTab('spi')">&#x25C8; Avance Real / SPI</button>
-      <button class="tab-btn" data-tab="deps" onclick="showTab('deps')">&#x29E2; Dependencias</button>
-      <button class="tab-btn" onclick="clearState()"
+      <button class="tab-btn active" data-tab="sim" type="button" role="tab" aria-controls="tab-sim" aria-selected="true">&#x29DF; Simulador</button>
+      <button class="tab-btn" data-tab="spi" type="button" role="tab" aria-controls="tab-spi" aria-selected="false">&#x25C8; Avance Real / SPI</button>
+      <button class="tab-btn" data-tab="deps" type="button" role="tab" aria-controls="tab-deps" aria-selected="false">&#x29E2; Dependencias</button>
+      <button class="tab-btn" id="resetBtn" type="button"
         style="border-color:var(--red);color:var(--red);margin-left:6px">&#x21BA; Reset</button>
     </div>
   </div>
@@ -1014,7 +1102,7 @@
       <div class="sb-top">
         <div class="sb-label">Filtrar por rubro</div>
         <div class="rubro-chips" id="rubroChips"></div>
-        <input class="search" type="text" id="searchInput" placeholder="Buscar &iacute;tem...">
+        <input class="search" type="text" id="searchInput" placeholder="Buscar &iacute;tem..." aria-label="Buscar ítem por código o nombre">
       </div>
       <div class="items-scroll" id="itemsList"></div>
     </div>
@@ -1022,12 +1110,12 @@
     <div class="main">
 
       <!-- TAB SIMULADOR -->
-      <div class="tab-content active" id="tab-sim">
+      <div class="tab-content active" id="tab-sim" role="tabpanel">
         <div class="sim-top">
           <div class="sel-panel">
             <div class="sel-header">
               <span>&Iacute;tems con atraso simulado</span>
-              <button class="btn-sm" onclick="clearAll()">&#x2715; Limpiar todo</button>
+              <button class="btn-sm" id="clearAllBtn" type="button">&#x2715; Limpiar todo</button>
             </div>
             <div class="sel-rows" id="selRows">
               <div class="empty-sel">&larr; Seleccion&aacute; &iacute;tems para simular atrasos</div>
@@ -1075,8 +1163,8 @@
                 <div class="leg-line" style="background:var(--green)"></div>Recuperaci&oacute;n
               </div>
             </div>
-            <button class="expand-btn" onclick="toggleChartOverlay()"
-              title="Ver gr&aacute;fico en pantalla completa">&#x26F6; Expandir</button>
+            <button class="expand-btn" id="expandChartBtn" type="button"
+              title="Ver gr&aacute;fico en pantalla completa" aria-label="Expandir gráfico">&#x26F6; Expandir</button>
           </div>
           <div class="chart-wrap"><canvas id="curvaSChart"></canvas></div>
         </div>
@@ -1099,12 +1187,12 @@
       </div>
 
       <!-- TAB SPI -->
-      <div class="tab-content" id="tab-spi">
+      <div class="tab-content" id="tab-spi" role="tabpanel">
         <div class="spi-layout">
           <div class="spi-input-panel">
             <div class="spi-section-title">Avance real acumulado por mes (%)</div>
             <div id="spiInputRows"></div>
-            <button class="btn-primary" onclick="calcSPI()">&#x25B6; Calcular SPI</button>
+            <button class="btn-primary" id="calcSpiBtn" type="button">&#x25B6; Calcular SPI</button>
             <div style="margin-top:12px;font-size:10px;color:var(--text3);line-height:1.6">
               Ingres&aacute; el % de avance <strong style="color:var(--text2)">acumulado real</strong> al cierre de cada
               mes.<br>
@@ -1144,7 +1232,7 @@
       </div>
 
       <!-- TAB DEPENDENCIAS -->
-      <div class="tab-content" id="tab-deps">
+      <div class="tab-content" id="tab-deps" role="tabpanel">
         <div class="deps-layout">
           <div class="deps-hdr">
             <h2>Mapa de Dependencias</h2>
@@ -1182,7 +1270,7 @@
             <select class="dep-select" id="depFromSel"></select>
             <span style="font-size:11px;color:var(--text3)">&rarr;</span>
             <select class="dep-select" id="depToSel"></select>
-            <button class="btn-sm" onclick="addManualDep()" style="white-space:nowrap">Agregar</button>
+            <button class="btn-sm" id="addDepBtn" type="button" style="white-space:nowrap">Agregar</button>
           </div>
         </div>
       </div>
@@ -1358,13 +1446,19 @@
     function showTab(name) {
       var tabs = document.querySelectorAll('.tab-content');
       for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
-      var btns = document.querySelectorAll('.tab-btn');
-      for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+      var btns = document.querySelectorAll('.tab-btn[data-tab]');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.remove('active');
+        btns[i].setAttribute('aria-selected', 'false');
+      }
       document.getElementById('tab-' + name).classList.add('active');
       // Activar botón correspondiente
-      var allBtns = document.querySelectorAll('.tab-btn');
+      var allBtns = document.querySelectorAll('.tab-btn[data-tab]');
       for (var i = 0; i < allBtns.length; i++) {
-        if (allBtns[i].getAttribute('data-tab') === name) allBtns[i].classList.add('active');
+        if (allBtns[i].getAttribute('data-tab') === name) {
+          allBtns[i].classList.add('active');
+          allBtns[i].setAttribute('aria-selected', 'true');
+        }
       }
       if (name === 'deps') renderDepsTable();
       if (name === 'spi') { buildSPIInputs(); }
@@ -1400,7 +1494,37 @@
       }
     }
 
+    function setupUIHandlers() {
+      var tabBtns = document.querySelectorAll('.tab-btn[data-tab]');
+      for (var i = 0; i < tabBtns.length; i++) {
+        (function (btn) {
+          btn.addEventListener('click', function () {
+            showTab(btn.getAttribute('data-tab'));
+          });
+        })(tabBtns[i]);
+      }
+
+      var resetBtn = document.getElementById('resetBtn');
+      if (resetBtn) resetBtn.addEventListener('click', clearState);
+
+      var clearAllBtn = document.getElementById('clearAllBtn');
+      if (clearAllBtn) clearAllBtn.addEventListener('click', clearAll);
+
+      var expandBtn = document.getElementById('expandChartBtn');
+      if (expandBtn) expandBtn.addEventListener('click', toggleChartOverlay);
+
+      var closeBtn = document.getElementById('closeChartBtn');
+      if (closeBtn) closeBtn.addEventListener('click', toggleChartOverlay);
+
+      var calcBtn = document.getElementById('calcSpiBtn');
+      if (calcBtn) calcBtn.addEventListener('click', calcSPI);
+
+      var addDepBtn = document.getElementById('addDepBtn');
+      if (addDepBtn) addDepBtn.addEventListener('click', addManualDep);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+      setupUIHandlers();
       document.getElementById('searchInput').addEventListener('input', function (e) {
         searchTerm = e.target.value.toLowerCase();
         renderItemsList();
@@ -2441,7 +2565,7 @@
           <div class="leg-line" style="background:var(--accent)"></div>Re-baseline
         </div>
       </div>
-      <button class="expand-btn" onclick="toggleChartOverlay()" style="margin-left:auto">&#x2715; Cerrar</button>
+      <button class="expand-btn" id="closeChartBtn" type="button" style="margin-left:auto">&#x2715; Cerrar</button>
     </div>
     <div class="chart-overlay-inner">
       <canvas id="curvaSChartBig"></canvas>
