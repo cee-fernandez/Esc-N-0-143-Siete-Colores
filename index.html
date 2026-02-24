@@ -1,1155 +1,1088 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simulador de Obra v2.0</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#0a0e14;--s1:#0f1419;--s2:#161c24;--s3:#1d2530;--border:#253040;--border2:#1d2530;--accent:#f7c948;--red:#e05c3a;--blue:#3aafe0;--green:#3fb950;--purple:#b97aff;--text:#cdd9e5;--text2:#768390;--text3:#444c56}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
-.header{display:flex;align-items:center;gap:12px;padding:0 20px;height:48px;background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0}
-.logo{background:var(--accent);color:#000;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;padding:3px 7px;letter-spacing:.08em}
-.header-info h1{font-size:13px;font-weight:600;letter-spacing:-.01em}
-.header-info p{font-size:10px;color:var(--text2);font-family:'IBM Plex Mono',monospace}
-.header-tabs{margin-left:auto;display:flex;gap:2px}
-.tab-btn{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 14px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;letter-spacing:.05em}
-.tab-btn.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600}
-.tab-btn:hover:not(.active){border-color:var(--accent);color:var(--accent)}
-.app{display:flex;height:calc(100vh - 48px)}
-.sidebar{width:300px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--s1);overflow:hidden}
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.sb-top{padding:12px;border-bottom:1px solid var(--border2);flex-shrink:0}
-.sb-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
-.rubro-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
-.chip{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 7px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all .12s;letter-spacing:.04em}
-.chip:hover{border-color:var(--accent);color:var(--accent)}
-.chip.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600}
-.search{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 10px;font-family:'IBM Plex Sans',sans-serif;font-size:12px;outline:none;transition:border-color .15s}
-.search:focus{border-color:var(--accent)}
-.search::placeholder{color:var(--text3)}
-.items-scroll{flex:1;overflow-y:auto;padding:6px}
-.items-scroll::-webkit-scrollbar{width:3px}
-.items-scroll::-webkit-scrollbar-thumb{background:var(--border)}
-.item-row{padding:8px 10px;border:1px solid transparent;cursor:pointer;transition:all .12s;margin-bottom:2px}
-.item-row:hover{border-color:var(--border);background:var(--s2)}
-.item-row.sel{border-color:var(--accent);background:rgba(247,201,72,.05)}
-.item-row.cascade{border-color:var(--red);background:rgba(224,92,58,.04)}
-.item-id{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--accent);margin-bottom:2px}
-.item-id.cascade-id{color:var(--red)}
-.item-name{font-size:11px;color:var(--text);line-height:1.35}
-.item-foot{display:flex;align-items:center;gap:6px;margin-top:4px}
-.item-inc{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text2)}
-.item-dur{font-size:9px;color:var(--text3)}
-.cascade-tag{font-size:8px;background:rgba(224,92,58,.15);color:var(--red);padding:1px 5px;font-family:'IBM Plex Mono',monospace;border:1px solid rgba(224,92,58,.3)}
-.item-check{margin-left:auto;width:12px;height:12px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0}
-.item-row.sel .item-check{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700}
-.item-row.cascade .item-check{background:var(--red);border-color:var(--red);color:#fff}
-.tab-content{display:none;flex:1;flex-direction:column;overflow:hidden}
-.tab-content.active{display:flex}
-.sim-top{flex-shrink:0;border-bottom:1px solid var(--border)}
-.sel-panel{padding:12px 16px;border-bottom:1px solid var(--border2);background:var(--s1)}
-.sel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.sel-header span{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
-.btn-sm{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 9px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all .12s}
-.btn-sm:hover{border-color:var(--red);color:var(--red)}
-.sel-rows{display:flex;flex-direction:column;gap:5px;max-height:130px;overflow-y:auto}
-.sel-row{display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--s2);border:1px solid var(--border2)}
-.sel-row.is-cascade{border-left:2px solid var(--red);opacity:.8}
-.sr-id{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--accent);min-width:80px}
-.sr-name{font-size:11px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sr-delay{display:flex;align-items:center;gap:6px}
-.sr-delay label{font-size:10px;color:var(--text2);white-space:nowrap}
-.delay-inp{width:52px;background:var(--bg);border:1px solid var(--border);color:var(--red);padding:3px 6px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;text-align:center;outline:none;transition:border-color .12s}
-.delay-inp:focus{border-color:var(--red)}
-.cascade-lbl{font-size:9px;color:var(--red);font-family:'IBM Plex Mono',monospace;white-space:nowrap}
-.rm-btn{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:0 3px;transition:color .12s}
-.rm-btn:hover{color:var(--red)}
-.empty-sel{padding:12px;text-align:center;color:var(--text3);font-size:11px;font-family:'IBM Plex Mono',monospace;border:1px dashed var(--border2)}
-.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border2);flex-shrink:0}
-.metric{padding:10px 14px;background:var(--s2)}
-.met-label{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px}
-.met-val{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;line-height:1}
-.met-val.ok{color:var(--green)}
-.met-val.warn{color:var(--accent)}
-.met-val.danger{color:var(--red)}
-.met-val.info{color:var(--blue)}
-.met-sub{font-size:9px;color:var(--text3);margin-top:2px}
-.chart-zone{flex:1;padding:14px 18px;display:flex;flex-direction:column;min-height:0}
-.chart-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0}
-.chart-title{font-size:12px;font-weight:600;color:var(--text)}
-.legend{display:flex;gap:16px}
-.leg-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text2);font-family:'IBM Plex Mono',monospace}
-.leg-line{width:18px;height:2px;border-radius:1px}
-.chart-wrap{flex:1;position:relative;min-height:0}
-.impact-zone{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;padding:0 18px 8px;max-height:120px;overflow-y:auto}
-.recovery-zone{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;padding:0 18px 12px;max-height:200px;overflow-y:auto}
-.impact-title{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;padding:8px 0 5px;position:sticky;top:0;background:var(--s1)}
-.impact-tbl{width:100%;border-collapse:collapse;font-size:10px}
-.impact-tbl th{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;text-align:left;border-bottom:1px solid var(--border2)}
-.impact-tbl td{padding:4px 8px;border-bottom:1px solid rgba(37,48,64,.4);font-family:'IBM Plex Mono',monospace;font-size:10px}
-.name-col{font-family:'IBM Plex Sans',sans-serif!important;font-size:10px!important;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.spi-layout{flex:1;display:flex;overflow:hidden}
-.spi-input-panel{width:260px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--s1);overflow-y:auto;padding:14px}
-.spi-input-panel::-webkit-scrollbar{width:3px}
-.spi-input-panel::-webkit-scrollbar-thumb{background:var(--border)}
-.spi-main{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:14px 18px}
-.spi-section-title{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border2)}
-.spi-mes-row{display:grid;grid-template-columns:55px 1fr 30px;gap:6px;align-items:center;margin-bottom:5px}
-.spi-mes-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text2)}
-.spi-inp{background:var(--s2);border:1px solid var(--border);color:var(--blue);padding:4px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;transition:border-color .12s;width:100%}
-.spi-inp:focus{border-color:var(--blue)}
-.spi-inp::placeholder{color:var(--text3);font-size:9px}
-.spi-inp.has-val{border-color:rgba(58,175,224,.4);background:rgba(58,175,224,.04)}
-.spi-pct{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3)}
-.btn-primary{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:7px 16px;border:1px solid var(--accent);background:var(--accent);color:#000;cursor:pointer;font-weight:600;width:100%;margin-top:10px;letter-spacing:.05em;transition:opacity .15s}
-.btn-primary:hover{opacity:.85}
-.spi-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;flex-shrink:0}
-.spi-met{padding:10px 12px;background:var(--s2);border:1px solid var(--border2)}
-.spi-charts{flex:1;display:grid;grid-template-rows:1fr 1fr;gap:10px;min-height:0}
-.chart-card{background:var(--s2);border:1px solid var(--border2);padding:10px;display:flex;flex-direction:column}
-.chart-card-title{font-size:11px;font-weight:600;color:var(--text);margin-bottom:6px;flex-shrink:0}
-.chart-card-wrap{flex:1;position:relative;min-height:0}
-.deps-layout{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:14px 18px}
-.deps-hdr{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;flex-shrink:0}
-.deps-hdr h2{font-size:13px;font-weight:600;white-space:nowrap}
-.deps-hdr p{font-size:11px;color:var(--text2)}
-.deps-filter{display:flex;gap:10px;margin-bottom:10px;flex-shrink:0;align-items:center;flex-wrap:wrap}
-.dep-tipo{font-size:8px;padding:1px 6px;border:1px solid var(--border)}
-.dep-tipo.jerarquia{color:var(--purple);border-color:rgba(185,122,255,.3);background:rgba(185,122,255,.06)}
-.dep-tipo.rubro{color:var(--green);border-color:rgba(63,185,80,.3);background:rgba(63,185,80,.06)}
-.dep-tipo.manual{color:var(--accent);border-color:rgba(247,201,72,.3);background:rgba(247,201,72,.06)}
-.deps-table-wrap{flex:1;overflow-y:auto;border:1px solid var(--border2)}
-.deps-table-wrap::-webkit-scrollbar{width:4px}
-.deps-table-wrap::-webkit-scrollbar-thumb{background:var(--border)}
-.deps-tbl{width:100%;border-collapse:collapse;font-size:11px}
-.deps-tbl th{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);background:var(--s2);position:sticky;top:0;z-index:1}
-.deps-tbl td{padding:5px 10px;border-bottom:1px solid rgba(37,48,64,.5);font-family:'IBM Plex Mono',monospace;font-size:10px}
-.deps-tbl tr:hover td{background:var(--s2)}
-.dep-from{color:var(--accent)}
-.dep-to{color:var(--blue)}
-.dep-del-btn{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:11px;transition:color .12s}
-.dep-del-btn:hover{color:var(--red)}
-.add-dep-row{padding:10px 14px;background:var(--s1);border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0}
-.dep-select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:5px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;outline:none;flex:1}
-.dep-select:focus{border-color:var(--accent)}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border)}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Obra v2.0</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e14;
+      --s1: #0f1419;
+      --s2: #161c24;
+      --s3: #1d2530;
+      --border: #253040;
+      --border2: #1d2530;
+      --accent: #f7c948;
+      --red: #e05c3a;
+      --blue: #3aafe0;
+      --green: #3fb950;
+      --purple: #b97aff;
+      --text: #cdd9e5;
+      --text2: #768390;
+      --text3: #444c56
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px;
+      height: 48px;
+      background: var(--s1);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0
+    }
+
+    .logo {
+      background: var(--accent);
+      color: #000;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 600;
+      font-size: 10px;
+      padding: 3px 7px;
+      letter-spacing: .08em
+    }
+
+    .header-info h1 {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -.01em
+    }
+
+    .header-info p {
+      font-size: 10px;
+      color: var(--text2);
+      font-family: 'IBM Plex Mono', monospace
+    }
+
+    .header-tabs {
+      margin-left: auto;
+      display: flex;
+      gap: 2px
+    }
+
+    .tab-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .15s;
+      letter-spacing: .05em
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      font-weight: 600
+    }
+
+    .tab-btn:hover:not(.active) {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    .app {
+      display: flex;
+      height: calc(100vh - 48px)
+    }
+
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--s1);
+      overflow: hidden
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0
+    }
+
+    .sb-top {
+      padding: 12px;
+      border-bottom: 1px solid var(--border2);
+      flex-shrink: 0
+    }
+
+    .sb-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--text3);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 8px
+    }
+
+    .rubro-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px
+    }
+
+    .chip {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      padding: 2px 7px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .12s;
+      letter-spacing: .04em
+    }
+
+    .chip:hover {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    .chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      font-weight: 600
+    }
+
+    .search {
+      width: 100%;
+      background: var(--s2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 10px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 12px;
+      outline: none;
+      transition: border-color .15s
+    }
+
+    .search:focus {
+      border-color: var(--accent)
+    }
+
+    .search::placeholder {
+      color: var(--text3)
+    }
+
+    .items-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px
+    }
+
+    .items-scroll::-webkit-scrollbar {
+      width: 3px
+    }
+
+    .items-scroll::-webkit-scrollbar-thumb {
+      background: var(--border)
+    }
+
+    .item-row {
+      padding: 8px 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all .12s;
+      margin-bottom: 2px
+    }
+
+    .item-row:hover {
+      border-color: var(--border);
+      background: var(--s2)
+    }
+
+    .item-row.sel {
+      border-color: var(--accent);
+      background: rgba(247, 201, 72, .05)
+    }
+
+    .item-row.cascade {
+      border-color: var(--red);
+      background: rgba(224, 92, 58, .04)
+    }
+
+    .item-id {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--accent);
+      margin-bottom: 2px
+    }
+
+    .item-id.cascade-id {
+      color: var(--red)
+    }
+
+    .item-name {
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.35
+    }
+
+    .item-foot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px
+    }
+
+    .item-inc {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--text2)
+    }
+
+    .item-dur {
+      font-size: 9px;
+      color: var(--text3)
+    }
+
+    .cascade-tag {
+      font-size: 8px;
+      background: rgba(224, 92, 58, .15);
+      color: var(--red);
+      padding: 1px 5px;
+      font-family: 'IBM Plex Mono', monospace;
+      border: 1px solid rgba(224, 92, 58, .3)
+    }
+
+    .item-check {
+      margin-left: auto;
+      width: 12px;
+      height: 12px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      flex-shrink: 0
+    }
+
+    .item-row.sel .item-check {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      font-weight: 700
+    }
+
+    .item-row.cascade .item-check {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      overflow: hidden
+    }
+
+    .tab-content.active {
+      display: flex
+    }
+
+    #tab-sim {
+      overflow-y: auto
+    }
+
+    .sim-top {
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      overflow-y: auto;
+      max-height: 280px
+    }
+
+    .sel-panel {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border2);
+      background: var(--s1)
+    }
+
+    .sel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px
+    }
+
+    .sel-header span {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--text3);
+      letter-spacing: .08em;
+      text-transform: uppercase
+    }
+
+    .btn-sm {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      padding: 3px 9px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .12s
+    }
+
+    .btn-sm:hover {
+      border-color: var(--red);
+      color: var(--red)
+    }
+
+    .sel-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 130px;
+      overflow-y: auto
+    }
+
+    .sel-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      background: var(--s2);
+      border: 1px solid var(--border2)
+    }
+
+    .sel-row.is-cascade {
+      border-left: 2px solid var(--red);
+      opacity: .8
+    }
+
+    .sr-id {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--accent);
+      min-width: 80px
+    }
+
+    .sr-name {
+      font-size: 11px;
+      color: var(--text);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .sr-delay {
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .sr-delay label {
+      font-size: 10px;
+      color: var(--text2);
+      white-space: nowrap
+    }
+
+    .delay-inp {
+      width: 52px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--red);
+      padding: 3px 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      outline: none;
+      transition: border-color .12s
+    }
+
+    .delay-inp:focus {
+      border-color: var(--red)
+    }
+
+    .cascade-lbl {
+      font-size: 9px;
+      color: var(--red);
+      font-family: 'IBM Plex Mono', monospace;
+      white-space: nowrap
+    }
+
+    .edit-cascade-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 10px;
+      padding: 2px 6px;
+      transition: all .12s;
+      margin-left: 4px
+    }
+
+    .edit-cascade-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    .chart-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 14, 20, .96);
+      z-index: 1000;
+      flex-direction: column;
+      padding: 24px
+    }
+
+    .chart-overlay.open {
+      display: flex
+    }
+
+    .chart-overlay-inner {
+      flex: 1;
+      position: relative;
+      min-height: 0
+    }
+
+    .expand-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 10px;
+      padding: 3px 8px;
+      margin-left: auto;
+      transition: all .15s
+    }
+
+    .expand-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    .rm-btn {
+      background: transparent;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0 3px;
+      transition: color .12s
+    }
+
+    .rm-btn:hover {
+      color: var(--red)
+    }
+
+    .empty-sel {
+      padding: 12px;
+      text-align: center;
+      color: var(--text3);
+      font-size: 11px;
+      font-family: 'IBM Plex Mono', monospace;
+      border: 1px dashed var(--border2)
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1px;
+      background: var(--border2);
+      flex-shrink: 0
+    }
+
+    .metric {
+      padding: 10px 14px;
+      background: var(--s2)
+    }
+
+    .met-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 8px;
+      color: var(--text3);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin-bottom: 3px
+    }
+
+    .met-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1
+    }
+
+    .met-val.ok {
+      color: var(--green)
+    }
+
+    .met-val.warn {
+      color: var(--accent)
+    }
+
+    .met-val.danger {
+      color: var(--red)
+    }
+
+    .met-val.info {
+      color: var(--blue)
+    }
+
+    .met-sub {
+      font-size: 9px;
+      color: var(--text3);
+      margin-top: 2px
+    }
+
+    .chart-zone {
+      flex-shrink: 0;
+      height: 220px;
+      padding: 10px 18px 6px;
+      display: flex;
+      flex-direction: column
+    }
+
+    .chart-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-shrink: 0
+    }
+
+    .chart-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text)
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px
+    }
+
+    .leg-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9px;
+      color: var(--text2);
+      font-family: 'IBM Plex Mono', monospace
+    }
+
+    .leg-line {
+      width: 18px;
+      height: 2px;
+      border-radius: 1px
+    }
+
+    .chart-wrap {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+      max-height: 175px
+    }
+
+    .impact-zone {
+      border-top: 1px solid var(--border);
+      background: var(--s1);
+      flex-shrink: 0;
+      padding: 0 18px 8px
+    }
+
+    .recovery-zone {
+      border-top: 1px solid var(--border);
+      background: var(--s1);
+      flex-shrink: 0;
+      padding: 0 18px 12px
+    }
+
+    .impact-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--text3);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      padding: 8px 0 5px;
+      position: sticky;
+      top: 0;
+      background: var(--s1)
+    }
+
+    .impact-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px
+    }
+
+    .impact-tbl th {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 8px;
+      color: var(--text3);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--border2)
+    }
+
+    .impact-tbl td {
+      padding: 4px 8px;
+      border-bottom: 1px solid rgba(37, 48, 64, .4);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px
+    }
+
+    .name-col {
+      font-family: 'IBM Plex Sans', sans-serif !important;
+      font-size: 10px !important;
+      color: var(--text);
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .spi-layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden
+    }
+
+    .spi-input-panel {
+      width: 260px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--s1);
+      overflow-y: auto;
+      padding: 14px
+    }
+
+    .spi-input-panel::-webkit-scrollbar {
+      width: 3px
+    }
+
+    .spi-input-panel::-webkit-scrollbar-thumb {
+      background: var(--border)
+    }
+
+    .spi-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 14px 18px
+    }
+
+    .spi-section-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--text3);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border2)
+    }
+
+    .spi-mes-row {
+      display: grid;
+      grid-template-columns: 55px 1fr 30px;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 5px
+    }
+
+    .spi-mes-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--text2)
+    }
+
+    .spi-inp {
+      background: var(--s2);
+      border: 1px solid var(--border);
+      color: var(--blue);
+      padding: 4px 8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      outline: none;
+      transition: border-color .12s;
+      width: 100%
+    }
+
+    .spi-inp:focus {
+      border-color: var(--blue)
+    }
+
+    .spi-inp::placeholder {
+      color: var(--text3);
+      font-size: 9px
+    }
+
+    .spi-inp.has-val {
+      border-color: rgba(58, 175, 224, .4);
+      background: rgba(58, 175, 224, .04)
+    }
+
+    .spi-pct {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--text3)
+    }
+
+    .btn-primary {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      padding: 7px 16px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #000;
+      cursor: pointer;
+      font-weight: 600;
+      width: 100%;
+      margin-top: 10px;
+      letter-spacing: .05em;
+      transition: opacity .15s
+    }
+
+    .btn-primary:hover {
+      opacity: .85
+    }
+
+    .spi-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-shrink: 0
+    }
+
+    .spi-met {
+      padding: 10px 12px;
+      background: var(--s2);
+      border: 1px solid var(--border2)
+    }
+
+    .spi-charts {
+      flex: 1;
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+      min-height: 0
+    }
+
+    .chart-card {
+      background: var(--s2);
+      border: 1px solid var(--border2);
+      padding: 10px;
+      display: flex;
+      flex-direction: column
+    }
+
+    .chart-card-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+      flex-shrink: 0
+    }
+
+    .chart-card-wrap {
+      flex: 1;
+      position: relative;
+      min-height: 0
+    }
+
+    .deps-layout {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 18px
+    }
+
+    .deps-hdr {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-shrink: 0
+    }
+
+    .deps-hdr h2 {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap
+    }
+
+    .deps-hdr p {
+      font-size: 11px;
+      color: var(--text2)
+    }
+
+    .deps-filter {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    .dep-tipo {
+      font-size: 8px;
+      padding: 1px 6px;
+      border: 1px solid var(--border)
+    }
+
+    .dep-tipo.jerarquia {
+      color: var(--purple);
+      border-color: rgba(185, 122, 255, .3);
+      background: rgba(185, 122, 255, .06)
+    }
+
+    .dep-tipo.rubro {
+      color: var(--green);
+      border-color: rgba(63, 185, 80, .3);
+      background: rgba(63, 185, 80, .06)
+    }
+
+    .dep-tipo.manual {
+      color: var(--accent);
+      border-color: rgba(247, 201, 72, .3);
+      background: rgba(247, 201, 72, .06)
+    }
+
+    .deps-table-wrap {
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid var(--border2)
+    }
+
+    .deps-table-wrap::-webkit-scrollbar {
+      width: 4px
+    }
+
+    .deps-table-wrap::-webkit-scrollbar-thumb {
+      background: var(--border)
+    }
+
+    .deps-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px
+    }
+
+    .deps-tbl th {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: var(--text3);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      background: var(--s2);
+      position: sticky;
+      top: 0;
+      z-index: 1
+    }
+
+    .deps-tbl td {
+      padding: 5px 10px;
+      border-bottom: 1px solid rgba(37, 48, 64, .5);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px
+    }
+
+    .deps-tbl tr:hover td {
+      background: var(--s2)
+    }
+
+    .dep-from {
+      color: var(--accent)
+    }
+
+    .dep-to {
+      color: var(--blue)
+    }
+
+    .dep-del-btn {
+      background: transparent;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 11px;
+      transition: color .12s
+    }
+
+    .dep-del-btn:hover {
+      color: var(--red)
+    }
+
+    .add-dep-row {
+      padding: 10px 14px;
+      background: var(--s1);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0
+    }
+
+    .dep-select {
+      background: var(--s2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      outline: none;
+      flex: 1
+    }
+
+    .dep-select:focus {
+      border-color: var(--accent)
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border)
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="header">
-  <div class="logo">SIM v2.0</div>
-  <div class="header-info">
-    <h1>Simulador de Obra &mdash; Plan de Trabajo</h1>
-    <p>Esc. N&ordm; 0-143 Cerro Siete Colores &middot; APOLO SUR SA &middot; Base: Agosto 2025 &middot; 226 &iacute;tems &middot; 17 meses</p>
-  </div>
-  <div class="header-tabs">
-    <span id="saveIndicator" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--green);opacity:0.4;transition:opacity .4s;margin-right:8px;white-space:nowrap">&#x25CF; Guardado</span>
-    <button class="tab-btn active" data-tab="sim" onclick="showTab('sim')">&#x29DF; Simulador</button>
-    <button class="tab-btn" data-tab="spi" onclick="showTab('spi')">&#x25C8; Avance Real / SPI</button>
-    <button class="tab-btn" data-tab="deps" onclick="showTab('deps')">&#x29E2; Dependencias</button>
-    <button class="tab-btn" onclick="clearState()" style="border-color:var(--red);color:var(--red);margin-left:6px">&#x21BA; Reset</button>
-  </div>
-</div>
-
-<div class="app">
-  <div class="sidebar">
-    <div class="sb-top">
-      <div class="sb-label">Filtrar por rubro</div>
-      <div class="rubro-chips" id="rubroChips"></div>
-      <input class="search" type="text" id="searchInput" placeholder="Buscar &iacute;tem...">
+  <div class="header">
+    <div class="logo">SIM v2.0</div>
+    <div class="header-info">
+      <h1>Simulador de Obra &mdash; Plan de Trabajo</h1>
+      <p>Esc. N&ordm; 0-143 Cerro Siete Colores &middot; APOLO SUR SA &middot; Base: Agosto 2025 &middot; 226
+        &iacute;tems &middot; 17 meses</p>
     </div>
-    <div class="items-scroll" id="itemsList"></div>
+    <div class="header-tabs">
+      <span id="saveIndicator"
+        style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--green);opacity:0.4;transition:opacity .4s;margin-right:8px;white-space:nowrap">&#x25CF;
+        Guardado</span>
+      <button class="tab-btn active" data-tab="sim" onclick="showTab('sim')">&#x29DF; Simulador</button>
+      <button class="tab-btn" data-tab="spi" onclick="showTab('spi')">&#x25C8; Avance Real / SPI</button>
+      <button class="tab-btn" data-tab="deps" onclick="showTab('deps')">&#x29E2; Dependencias</button>
+      <button class="tab-btn" onclick="clearState()"
+        style="border-color:var(--red);color:var(--red);margin-left:6px">&#x21BA; Reset</button>
+    </div>
   </div>
 
-  <div class="main">
-
-    <!-- TAB SIMULADOR -->
-    <div class="tab-content active" id="tab-sim">
-      <div class="sim-top">
-        <div class="sel-panel">
-          <div class="sel-header">
-            <span>&Iacute;tems con atraso simulado</span>
-            <button class="btn-sm" onclick="clearAll()">&#x2715; Limpiar todo</button>
-          </div>
-          <div class="sel-rows" id="selRows">
-            <div class="empty-sel">&larr; Seleccion&aacute; &iacute;tems para simular atrasos</div>
-          </div>
-        </div>
-        <div class="metrics" id="metricsBar">
-          <div class="metric"><div class="met-label">Plazo original</div><div class="met-val ok">17m</div><div class="met-sub">Sin atrasos</div></div>
-          <div class="metric"><div class="met-label">Plazo simulado</div><div class="met-val ok">17m</div><div class="met-sub">Sin cambios</div></div>
-          <div class="metric"><div class="met-label">Manuales</div><div class="met-val warn">0</div><div class="met-sub">Seleccionados</div></div>
-          <div class="metric"><div class="met-label">Cascada</div><div class="met-val danger">0</div><div class="met-sub">Propagados auto</div></div>
-          <div class="metric"><div class="met-label">Incidencia</div><div class="met-val ok">0.0%</div><div class="met-sub">Afectada</div></div>
-        </div>
+  <div class="app">
+    <div class="sidebar">
+      <div class="sb-top">
+        <div class="sb-label">Filtrar por rubro</div>
+        <div class="rubro-chips" id="rubroChips"></div>
+        <input class="search" type="text" id="searchInput" placeholder="Buscar &iacute;tem...">
       </div>
-      <div class="chart-zone">
-        <div class="chart-hdr">
-          <span class="chart-title">Curva S &mdash; Avance F&iacute;sico Acumulado</span>
-          <div class="legend">
-            <div class="leg-item"><div class="leg-line" style="background:var(--blue)"></div>Plan original</div>
-            <div class="leg-item"><div class="leg-line" style="background:var(--red)"></div>Con atrasos</div>
-            <div class="leg-item"><div class="leg-line" style="background:var(--green)"></div>Recuperaci&oacute;n</div>
-          </div>
-        </div>
-        <div class="chart-wrap"><canvas id="curvaSChart"></canvas></div>
-      </div>
-      <div class="impact-zone">
-        <div class="impact-title">Detalle de impacto por &iacute;tem</div>
-        <div id="impactTable"></div>
-      </div>
-      <div class="recovery-zone">
-        <div class="impact-title" style="display:flex;align-items:center;gap:8px">
-          <span style="color:var(--green)">&#x25B6;</span> Plan de recuperaci&oacute;n
-          <span style="font-size:9px;color:var(--text3);font-weight:400;margin-left:4px">Qu&eacute; hacer para volver a la curva original</span>
-        </div>
-        <div id="recoveryPanel">
-          <div style="padding:12px;text-align:center;color:var(--text3);font-family:IBM Plex Mono,monospace;font-size:10px">Asign&aacute; atrasos para ver el plan de recuperaci&oacute;n</div>
-        </div>
-      </div>
+      <div class="items-scroll" id="itemsList"></div>
     </div>
 
-    <!-- TAB SPI -->
-    <div class="tab-content" id="tab-spi">
-      <div class="spi-layout">
-        <div class="spi-input-panel">
-          <div class="spi-section-title">Avance real acumulado por mes (%)</div>
-          <div id="spiInputRows"></div>
-          <button class="btn-primary" onclick="calcSPI()">&#x25B6; Calcular SPI</button>
-          <div style="margin-top:12px;font-size:10px;color:var(--text3);line-height:1.6">
-            Ingres&aacute; el % de avance <strong style="color:var(--text2)">acumulado real</strong> al cierre de cada mes.<br>
-            Dej&aacute; en blanco los meses futuros &mdash; el sistema proyectar&aacute; autom&aacute;ticamente.
-          </div>
-        </div>
-        <div class="spi-main">
-          <div class="spi-metrics">
-            <div class="spi-met"><div class="met-label">SPI actual</div><div class="met-val info" id="spiVal">&mdash;</div><div class="met-sub">Schedule Performance Index</div></div>
-            <div class="spi-met"><div class="met-label">Avance planificado</div><div class="met-val ok" id="spiPlan">&mdash;</div><div class="met-sub">Al &uacute;ltimo mes con datos</div></div>
-            <div class="spi-met"><div class="met-label">Fin proyectado</div><div class="met-val" id="spiEnd">&mdash;</div><div class="met-sub">Seg&uacute;n velocidad actual</div></div>
-          </div>
-          <div class="spi-charts">
-            <div class="chart-card">
-              <div class="chart-card-title">Curva S &mdash; Planificado vs Real vs Proyecci&oacute;n</div>
-              <div class="chart-card-wrap"><canvas id="spiCurveChart"></canvas></div>
+    <div class="main">
+
+      <div class="tab-content active" id="tab-sim">
+        <div class="sim-top">
+          <div class="sel-panel">
+            <div class="sel-header">
+              <span>&Iacute;tems con atraso simulado</span>
+              <button class="btn-sm" onclick="clearAll()">&#x2715; Limpiar todo</button>
             </div>
-            <div class="chart-card">
-              <div class="chart-card-title">SPI mensual (verde &ge;0.95 / amarillo &ge;0.8 / rojo &lt;0.8)</div>
-              <div class="chart-card-wrap"><canvas id="spiBarChart"></canvas></div>
+            <div class="sel-rows" id="selRows">
+              <div class="empty-sel">&larr; Seleccion&aacute; &iacute;tems para simular atrasos</div>
+            </div>
+          </div>
+          <div class="metrics" id="metricsBar">
+            <div class="metric">
+              <div class="met-label">Plazo original</div>
+              <div class="met-val ok">17m</div>
+              <div class="met-sub">Sin atrasos</div>
+            </div>
+            <div class="metric">
+              <div class="met-label">Plazo simulado</div>
+              <div class="met-val ok">17m</div>
+              <div class="met-sub">Sin cambios</div>
+            </div>
+            <div class="metric">
+              <div class="met-label">Manuales</div>
+              <div class="met-val warn">0</div>
+              <div class="met-sub">Seleccionados</div>
+            </div>
+            <div class="metric">
+              <div class="met-label">Cascada</div>
+              <div class="met-val danger">0</div>
+              <div class="met-sub">Propagados auto</div>
+            </div>
+            <div class="metric">
+              <div class="met-label">Incidencia</div>
+              <div class="met-val ok">0.0%</div>
+              <div class="met-sub">Afectada</div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- TAB DEPENDENCIAS -->
-    <div class="tab-content" id="tab-deps">
-      <div class="deps-layout">
-        <div class="deps-hdr">
-          <h2>Mapa de Dependencias</h2>
-          <p>Generadas autom&aacute;ticamente desde la jerarqu&iacute;a del plan + relaciones entre rubros. Pod&eacute;s eliminar o agregar manualmente.</p>
+        <div class="chart-zone">
+          <div class="chart-hdr">
+            <span class="chart-title">Curva S &mdash; Avance F&iacute;sico Acumulado</span>
+            <div class="legend">
+              <div class="leg-item">
+                <div class="leg-line" style="background:var(--blue)"></div>Plan original
+              </div>
+              <div class="leg-item">
+                <div class="leg-line" style="background:var(--red)"></div>Con atrasos
+              </div>
+              <div class="leg-item">
+                <div class="leg-line" style="background:var(--green)"></div>Recuperaci&oacute;n
+              </div>
+            </div>
+            <button class="expand-btn" onclick="toggleChartOverlay()"
+              title="Ver gr&aacute;fico en pantalla completa">&#x26F6; Expandir</button>
+          </div>
+          <div class="chart-wrap"><canvas id="curvaSChart"></canvas></div>
         </div>
-        <div class="deps-filter">
-          <span class="dep-tipo jerarquia">jerarqu&iacute;a</span><span style="font-size:10px;color:var(--text2)">Padre &rarr; Hijo</span>
-          <span class="dep-tipo rubro">rubro</span><span style="font-size:10px;color:var(--text2)">Entre rubros (f&iacute;sico)</span>
-          <span class="dep-tipo manual">manual</span><span style="font-size:10px;color:var(--text2)">Agregada por vos</span>
-          <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3)" id="depCount"></span>
+        <div class="impact-zone">
+          <div class="impact-title">Detalle de impacto por &iacute;tem</div>
+          <div id="impactTable"></div>
         </div>
-        <div class="deps-table-wrap">
-          <table class="deps-tbl">
-            <thead><tr>
-              <th>Predecesor</th><th>Sucesor</th><th>Tipo</th><th>Nombre predecesor</th><th>Nombre sucesor</th><th></th>
-            </tr></thead>
-            <tbody id="depsTableBody"></tbody>
-          </table>
-        </div>
-        <div class="add-dep-row">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text3);white-space:nowrap">+ AGREGAR:</span>
-          <select class="dep-select" id="depFromSel"></select>
-          <span style="font-size:11px;color:var(--text3)">&rarr;</span>
-          <select class="dep-select" id="depToSel"></select>
-          <button class="btn-sm" onclick="addManualDep()" style="white-space:nowrap">Agregar</button>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<div id="toast" style="position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:8px 16px;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;z-index:999"></div>
-
-<!-- DATOS Y LÓGICA -->
-<script>
-var PLAN_DATA = [{"id": "ARQ 1.1.1", "nombre": "Limpieza terreno", "incidencia": 0.000773, "meses": [0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "ARQ 1.1.2.1", "nombre": "Demolición edificio existente", "incidencia": 0.000465, "meses": [0, 0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "ARQ 1.1.2.2", "nombre": "Erradicación de forestales", "incidencia": 0.000186, "meses": [0, 0, 0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "ARQ 1.1.3", "nombre": "Verificación de medidas y replanteo", "incidencia": 0.001321, "meses": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0, 0, 0, 0, 0, 0]}, {"id": "ARQ 1.2.1", "nombre": "Presentación de Documentación y Plan de HyS aprobado", "incidencia": 0.013954, "meses": [0.8, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "ARQ 1.2.2", "nombre": "Servicio de H y S durante la ejecución de obra", "incidencia": 0.018606, "meses": [0.05, 0.05, 0.05, 0.05, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.05, 0.05, 0.1]}, {"id": "ARQ 1.3.1", "nombre": "Documentación Técnica Ejecutiva Aprobada", "incidencia": 0.012219, "meses": [0.3, 0.7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "ARQ 1.3.2", "nombre": "Documentación Tecnica Municipal y otros Entes", "incidencia": 0.002444, "meses": [0, 0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "ARQ 1.3.3", "nombre": "Aportes Previsionales Profesionales", "incidencia": 0.004073, "meses": [0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "ARQ 1.4.1", "nombre": "Entrega de Manuales de operación y mantenimiento de la totalidad de componentes e\ninstalaciones – Garantías", "incidencia": 0.000163, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 1.4.2", "nombre": "Capacitación del personal de mantenimiento", "incidencia": 0.000244, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 1.4.3", "nombre": "Presentación a la inspección de Documentación técnica Conforme a Obra", "incidencia": 0.000815, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 1.5.1", "nombre": "Provisión e instalación del módulo Comedor", "incidencia": 0.019028, "meses": [0, 0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "ARQ 2.1.1", "nombre": "Capa aisladora horizontal y vertical en mampostería", "incidencia": 0.000483, "meses": [0, 0, 0.05, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0, 0, 0, 0]}, {"id": "ARQ 2.1.2", "nombre": "Pintura/geotextil en estructuras en contacto con el suelo", "incidencia": 0.000395, "meses": [0, 0, 0.05, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0, 0, 0, 0]}, {"id": "ARQ 2.1.3", "nombre": "Impermeabilización de losas (aislación térmica e hidrófuga)", "incidencia": 0.008879, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0, 0, 0]}, {"id": "ARQ 2.1.4", "nombre": "Drenajes especiales c/geotextil compuesto, termosoldados para estructura", "incidencia": 0.000568, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0, 0, 0]}, {"id": "ARQ 3.1", "nombre": "Grueso impermeable", "incidencia": 0.004136, "meses": [0, 0, 0, 0, 0.05, 0.1, 0.1, 0.1, 0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0, 0]}, {"id": "ARQ 3.2", "nombre": "Grueso y fino", "incidencia": 0.003677, "meses": [0, 0, 0, 0, 0.05, 0.1, 0.1, 0.1, 0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0, 0]}, {"id": "ARQ 4.1", "nombre": "Cubierta panel sándwich", "incidencia": 0.048768, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0, 0]}, {"id": "ARQ 4.2", "nombre": "Zinguerias: cenefas, babetas y goteros metálicos", "incidencia": 0.003733, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0]}, {"id": "ARQ 4.3", "nombre": "Gárgolas de Hormigón Armado", "incidencia": 9.4e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0, 0]}, {"id": "ARQ 5.1.1", "nombre": "Contrapiso armado sobre terreno nivelado y compactado (esp. 0,15m)", "incidencia": 0.033906, "meses": [0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0, 0, 0]}, {"id": "ARQ 5.2.1", "nombre": "Contrapisos llaneados tipo lajas (esp. 0,12m)", "incidencia": 0.013537, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0]}, {"id": "ARQ 5.2.2", "nombre": "Cordones de borde de zona de juegos, jardines, canteros", "incidencia": 0.003482, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0]}, {"id": "ARQ 5.2.3", "nombre": "Contrapiso de HºAº estampado", "incidencia": 0.012571, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0]}, {"id": "ARQ 6.1.1", "nombre": "Baldosas de granito reconstituido semipulido 30x30 cm", "incidencia": 0.044686, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.2, 0.1, 0]}, {"id": "ARQ 6.1.2", "nombre": "Baldosas de granito podotáctil", "incidencia": 0.001995, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.2, 0.1, 0]}, {"id": "ARQ 6.2.1", "nombre": "Piso de Caucho Continuo In Situ", "incidencia": 0.012426, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0]}, {"id": "ARQ 6.2.2", "nombre": "Piso de adoquines premoldeados", "incidencia": 0.005928, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0]}, {"id": "ARQ 7.1.1", "nombre": "Granítico h=0.10 ml", "incidencia": 0.012073, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.3, 0.3, 0.1, 0]}, {"id": "ARQ 7.2.1", "nombre": "Rehundido de hormigón visto", "incidencia": 0.002839, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.3, 0.3, 0.1, 0]}, {"id": "ARQ 8.1.1", "nombre": "Tabiques de placa de roca de yeso", "incidencia": 0.01499, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.3, 0.3, 0.1, 0]}, {"id": "ARQ 8.2.1", "nombre": "Tabique divisor box sanitario de aluminio y placa MDF en laminado plástico + puerta", "incidencia": 0.002983, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.5, 0.25, 0]}, {"id": "ARQ 9.1", "nombre": "Suspendido de placa de roca de yeso", "incidencia": 0.008016, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2, 0]}, {"id": "ARQ 10.1.1", "nombre": "Porcelanatos o cerámicos", "incidencia": 0.010169, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2, 0]}, {"id": "ARQ 11.1.1", "nombre": "Ventanas fijas/corredizas/abrir con vidrio 3+3", "incidencia": 0.052994, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 11.1.2", "nombre": "Puertas corredizas/abrir con paño fijo de vidrio 3+3", "incidencia": 0.001347, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 11.2.1", "nombre": "Puertas de madera corredizas/abrir con marco metálico", "incidencia": 0.00444, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 11.3.1", "nombre": "Puerta metálica de abrir inyectada c/marco metálico", "incidencia": 0.014454, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 11.3.2", "nombre": "Portón c/marco metálico+chapa perforada", "incidencia": 0.008696, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 11.3.3", "nombre": "Puerta de reja metálica de abrir c/marco metálico", "incidencia": 0.001391, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 11.3.4", "nombre": "Puerta corrediza Salida SUM a patio de juegos", "incidencia": 0.001302, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 11.3.5", "nombre": "Barral antipanico para puerta doble", "incidencia": 0.002664, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 11.4.1", "nombre": "Vidrios laminados 3+3", "incidencia": 0.008691, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 11.4.2", "nombre": "Espejos (esp. 3mm)", "incidencia": 0.000286, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 12.1.1", "nombre": "Caño estructural, perfiles, planchuelas, hierro dulce", "incidencia": 0.008162, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 12.2.1", "nombre": "Metálica (de caños redondos o estructurales cerrados)", "incidencia": 0.001067, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.1, 0]}, {"id": "ARQ 13.1.1", "nombre": "Látex", "incidencia": 0.006044, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3]}, {"id": "ARQ 13.1.2", "nombre": "Antióxido y esmalte sintético", "incidencia": 0.002745, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3]}, {"id": "ARQ 13.1.3", "nombre": "Látex para cielorrasos", "incidencia": 0.000923, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3]}, {"id": "ARQ 13.1.4", "nombre": "Protección de Hormigón Visto", "incidencia": 0.001773, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3]}, {"id": "ARQ 13.2.1", "nombre": "Látex", "incidencia": 0.001606, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3]}, {"id": "ARQ 13.2.2", "nombre": "Antióxido y esmalte sintético", "incidencia": 0.002658, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.3, 0.3]}, {"id": "ARQ 14.1.1", "nombre": "Mesada de Acero inoxidable", "incidencia": 0.000381, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2]}, {"id": "ARQ 14.1.2", "nombre": "Mesada granito natural /piedra", "incidencia": 0.001252, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2]}, {"id": "ARQ 14.1.3", "nombre": "Muebles bajo mesada, alacenas", "incidencia": 0.00434, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2]}, {"id": "ARQ 14.1.4", "nombre": "Muebles guardado", "incidencia": 0.008488, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2]}, {"id": "ARQ 14.1.5", "nombre": "Percheros", "incidencia": 0.000555, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2]}, {"id": "ARQ 14.1.6", "nombre": "Campana de Acero Inoxidable", "incidencia": 0.000447, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.55, 0.2]}, {"id": "ARQ 14.2.1", "nombre": "Bancos, asientos", "incidencia": 0.005981, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 14.2.2", "nombre": "Cesto de residuos selectivos", "incidencia": 0.005974, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 14.2.3", "nombre": "Bicicleteros", "incidencia": 0.000559, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 14.2.4", "nombre": "Juegos infantiles, integradores y aparatos de gimnasia", "incidencia": 0.002393, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 14.2.5", "nombre": "Mástiles", "incidencia": 0.002347, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.1", "nombre": "Biblioteca ambulante", "incidencia": 0.000457, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.2", "nombre": "Biblioteca para Sala - B1", "incidencia": 0.003346, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.3", "nombre": "Estantería exhibidora - ED1", "incidencia": 0.001193, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.4", "nombre": "Mesa nivel inicial - 50*50 cm - M1-A", "incidencia": 0.00394, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.5", "nombre": "Mesa nivel inicial - 50*50 cm - M1-B", "incidencia": 0.004173, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.6", "nombre": "Sillas nivel inicial - S1", "incidencia": 0.005216, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.7", "nombre": "Mesa de caño - MC1", "incidencia": 0.002165, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.8", "nombre": "Sillas apilables de caño para niños - SC1", "incidencia": 0.004904, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.9", "nombre": "Armario oficina", "incidencia": 0.000473, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.10", "nombre": "Mueble bajo oficina", "incidencia": 0.000434, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.11", "nombre": "Escritorio con cajonera móvil Dir. Psic.", "incidencia": 0.000331, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.12", "nombre": "Escritorio para maestra con cajonera móvil", "incidencia": 0.001193, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.13", "nombre": "Mesa grupal adultos - MC3", "incidencia": 9.8e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.14", "nombre": "Sillas tapizadas adultos", "incidencia": 0.000389, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 15.15", "nombre": "Sillas apilables adultos", "incidencia": 0.001842, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ARQ 16.1", "nombre": "Veredas de hormigón armado, ochavas, rampas para discapacitados, etc.", "incidencia": 0.004715, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "ARQ 16.2", "nombre": "Puentes de hormigón armado vehiculares y peatonales", "incidencia": 0.00043, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "ARQ 16.3", "nombre": "Casetas para arbolado público", "incidencia": 0.000989, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "ARQ 16.4", "nombre": "Pilonas de contención", "incidencia": 0.000749, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "ARQ 16.5", "nombre": "Cierre Perimetral Modular de malla electrosoldada", "incidencia": 0.005489, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "ARQ 16.6", "nombre": "Muros de Cierre y Contención de hormigón y piedra", "incidencia": 0.004285, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "ARQ 17.1", "nombre": "Limpieza de obra", "incidencia": 0.011698, "meses": [0.05, 0.05, 0.05, 0.05, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.05, 0.05, 0.1]}, {"id": "EST 1.1", "nombre": "Excavaciones fundaciones", "incidencia": 0.005247, "meses": [0, 0.4, 0.4, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "EST 1.2", "nombre": "Estudio de suelos", "incidencia": 0.000201, "meses": [1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "EST 2.1", "nombre": "H° de limpieza bajo estructura de fundación", "incidencia": 0.004192, "meses": [0, 0.2, 0.3, 0.3, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "EST 2.2", "nombre": "Zapatas corridas, Plateas, Bases aisladas, Cimientos de Hº Ciclópeo y Pozos de fundación", "incidencia": 0.068894, "meses": [0, 0.2, 0.3, 0.3, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "EST 2.3", "nombre": "Vigas de Fundación", "incidencia": 0.020063, "meses": [0, 0, 0.2, 0.3, 0.3, 0.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {"id": "EST 2.4", "nombre": "Columnas", "incidencia": 0.027369, "meses": [0, 0, 0.05, 0.1, 0.15, 0.15, 0.15, 0.15, 0.1, 0.1, 0.05, 0, 0, 0, 0, 0, 0]}, {"id": "EST 2.5", "nombre": "Vigas", "incidencia": 0.049654, "meses": [0, 0, 0, 0.05, 0.1, 0.15, 0.15, 0.15, 0.15, 0.1, 0.1, 0.05, 0, 0, 0, 0, 0]}, {"id": "EST 2.6", "nombre": "Tabiques, Muros de sostenimientos", "incidencia": 0.007376, "meses": [0, 0, 0, 0.05, 0.1, 0.15, 0.15, 0.15, 0.15, 0.1, 0.1, 0.05, 0, 0, 0, 0, 0]}, {"id": "EST 2.7", "nombre": "Losas macizas de hormigón visto", "incidencia": 0.021725, "meses": [0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0, 0, 0, 0, 0]}, {"id": "EST 2.8", "nombre": "Losas macizas", "incidencia": 0.002424, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0.25, 0.25, 0.25, 0, 0, 0, 0, 0]}, {"id": "EST 3.1", "nombre": "Columnas, Vigas, Correas, Diagonales, Tensores", "incidencia": 0.055911, "meses": [0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2, 0, 0, 0, 0, 0]}, {"id": "EST 4.1", "nombre": "Mampostería con ladrillos macizos", "incidencia": 0.009534, "meses": [0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0, 0, 0]}, {"id": "ICF 1.1", "nombre": "Acometida y Tablero Principal TP", "incidencia": 0.001418, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2]}, {"id": "ICF 1.2", "nombre": "Tablero General TG", "incidencia": 0.00465, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1]}, {"id": "ICF 1.3", "nombre": "Tableros Seccionales", "incidencia": 0.006118, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.1, 0.1]}, {"id": "ICF 2.1", "nombre": "Puesta a tierra completa", "incidencia": 0.000903, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2]}, {"id": "ICF 2.2", "nombre": "Medición puestas a tierra (S/Res. SRT 900/15)", "incidencia": 9.9e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2]}, {"id": "ICF 2.3", "nombre": "Protección contra descargas atmosféricas", "incidencia": 0.002973, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2]}, {"id": "ICF 2.4", "nombre": "Provisión y colocación de cable desnudo 50mm2", "incidencia": 0.00117, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2]}, {"id": "ICF 3.1", "nombre": "Cañerías metálicas", "incidencia": 0.001947, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ICF 3.2", "nombre": "Bandejas portacables", "incidencia": 0.000425, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ICF 3.3", "nombre": "Canalizaciones subterráneas", "incidencia": 0.0007, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ICF 4.1", "nombre": "Conductores unipolares LSOH", "incidencia": 0.003707, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2]}, {"id": "ICF 4.2", "nombre": "Cables subterráneos LSOH sobre bandeja portacable", "incidencia": 0.001742, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2]}, {"id": "ICF 4.3", "nombre": "Instalaciones subterráneas", "incidencia": 0.001853, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.2, 0.3, 0.2]}, {"id": "ICF 5.1", "nombre": "Tipo de artefactos de iluminación", "incidencia": 0.013535, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ICF 5.2", "nombre": "Equipos de luz de emergencia autónoma LED (LE)", "incidencia": 0.00033, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ICF 5.3", "nombre": "Luces de emergencia autónoma con 2 faros LED (LEA2F)", "incidencia": 0.000233, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ICF 6.1", "nombre": "Metálicas semipesadas", "incidencia": 0.001606, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ICF 6.2", "nombre": "Llaves, sensores y tomacorrientes", "incidencia": 0.00054, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.2, 0.3, 0.2, 0.2]}, {"id": "ICF 7.1", "nombre": "Bombas de agua", "incidencia": 0.002942, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.5]}, {"id": "ICF 7.2", "nombre": "Bombas para riego", "incidencia": 0.001165, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.5]}, {"id": "ICF 7.3", "nombre": "Extractor de campana tipo Z", "incidencia": 4.8e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.5]}, {"id": "ICF 7.4", "nombre": "UPS 800VA", "incidencia": 0.001201, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.5]}, {"id": "ICF 7.5", "nombre": "Termotanque eléctrico", "incidencia": 0.000562, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.5]}, {"id": "IPF 1", "nombre": "Gabinete de Corriente Continua GE1", "incidencia": 0.00068, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "IPF 2", "nombre": "Inversor de corriente continua (DC)", "incidencia": 0.005241, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "IPF 3", "nombre": "Canalizaciones", "incidencia": 0.000519, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "IPF 4", "nombre": "Conductores", "incidencia": 0.000247, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "IPF 5", "nombre": "Puesta a Tierra", "incidencia": 8.2e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "IPF 6", "nombre": "Medidor bidireccional", "incidencia": 0.000874, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "IPF 7", "nombre": "Lector de Monitoreo", "incidencia": 0.000204, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "IPF 8", "nombre": "Provisión de Paneles y Soportes de Sujeción", "incidencia": 0.015724, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ICD 1.1", "nombre": "Bandejas portacables", "incidencia": 0.000425, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ICD 1.2", "nombre": "Caño PVC", "incidencia": 0.000404, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ICD 1.3", "nombre": "Caño metálico", "incidencia": 0.000327, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ICD 1.4", "nombre": "Caja rectangular metálica", "incidencia": 0.000173, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ICD 2.1", "nombre": "UTP", "incidencia": 0.000292, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ICD 2.2", "nombre": "Patch Cord", "incidencia": 8e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ICD 3.1", "nombre": "Sistema de alarma contra robo (SAR)", "incidencia": 0.001498, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ICD 4.1", "nombre": "Rack y accesorios", "incidencia": 0.001543, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ICD 4.2", "nombre": "Switch", "incidencia": 0.000319, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ICD 4.3", "nombre": "Central telefónica", "incidencia": 0.000121, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ICD 4.4", "nombre": "Teléfonos", "incidencia": 0.000152, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ICD 4.5", "nombre": "Access Point (AP)", "incidencia": 0.001777, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ICD 4.1", "nombre": "Certificación de sistema", "incidencia": 0.000322, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ITM 1.1", "nombre": "Equipos separados tipo Piso-Techo", "incidencia": 0.005896, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2]}, {"id": "ITM 1.2", "nombre": "Equipos split", "incidencia": 0.010669, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2]}, {"id": "ITM 1.3", "nombre": "Equipos multisplit", "incidencia": 0.004335, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2]}, {"id": "ITM 2.1", "nombre": "Provisión y montaje de tubería de cobre", "incidencia": 0.001117, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2]}, {"id": "ITM 2.2", "nombre": "Provisión y montaje de cañería desagüe de condensado", "incidencia": 8.1e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2]}, {"id": "ITM 3.1", "nombre": "Calderas", "incidencia": 0.006155, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ITM 3.2", "nombre": "Radiadores", "incidencia": 0.011499, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.4, 0.4]}, {"id": "ITM 3.3", "nombre": "Cañería termofusionable", "incidencia": 0.001129, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2]}, {"id": "ITM 3.4", "nombre": "Pruebas y ensayos", "incidencia": 0.000525, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0]}, {"id": "ITM 4.1", "nombre": "Termostatos", "incidencia": 0.000208, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, 0.2]}, {"id": "ISA 1.1", "nombre": "Conexiones externas", "incidencia": 0.000312, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.3, 0.5, 0.2]}, {"id": "ISA 1.2", "nombre": "Cañerías primarias y accesorios", "incidencia": 0.001977, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ISA 1.3", "nombre": "Cañerías secundarias y accesorios", "incidencia": 0.000601, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ISA 1.4", "nombre": "Cañerías de ventilación", "incidencia": 0.000357, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ISA 1.5", "nombre": "Piletas de patio, bocas de acceso, bocas tapa inspección, bocas de registro y accesorios", "incidencia": 0.000245, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ISA 1.6", "nombre": "Cámaras de Inspección", "incidencia": 0.000483, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ISA 2.1", "nombre": "Cañerías horizontales enterradas, bocas, rejas y accesorios", "incidencia": 0.002708, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ISA 2.2", "nombre": "Bocas de Desagüe", "incidencia": 0.000799, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ISA 2.3", "nombre": "Conexiones externas a acequias, hijuelas, pozos de infiltración, servidumbres (habilitación)", "incidencia": 0.000596, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.1", "nombre": "Provisión y colocación: cañerías de alimentación, equipamiento, accesorios", "incidencia": 0.000157, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.2", "nombre": "Provisión y colocación: cisterna, tanques de reserva de agua", "incidencia": 0.002014, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.2, 0.3]}, {"id": "ISA 3.3", "nombre": "Provisión y colocación: cañerías de distribución hasta artefactos, llaves, canillas de servicio y\naccesorios", "incidencia": 0.002182, "meses": [0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]}, {"id": "ISA 3.4", "nombre": "Artefactos y griferías: Inodoro pedestal", "incidencia": 0.002372, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.5", "nombre": "Artefactos y griferías: lavatorios", "incidencia": 0.001179, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.6", "nombre": "Artefactos y griferías: piletón y grifería para sanitario alumnos", "incidencia": 0.002791, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.7", "nombre": "Artefactos y griferías: kit completo lavatorio e inodoro de loza y grifería baño para personas con\ndiscapacidad", "incidencia": 0.00043, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.8", "nombre": "Artefactos y griferías: kit de accesorios de baños", "incidencia": 0.000756, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.9", "nombre": "Artefactos y griferías: kit de accesorios de baños para personas con discapacidad", "incidencia": 0.000124, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.10", "nombre": "Conexiones cromadas flexibles a artefactos, con llavines de corte en cada uno.", "incidencia": 0.000463, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.11", "nombre": "Provisión de otros equipos y accesorios (ablandador de agua, presurización, dispenser de\nagua, clorinadores, etc)", "incidencia": 0.004748, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.12", "nombre": "Pileta de acero inoxidable y grifería", "incidencia": 0.000959, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "ISA 3.13", "nombre": "Conexiones cromadas flexibles a termotanque eléctrico, con llavines de corte", "incidencia": 0.000834, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "SCI 1.1", "nombre": "Matafuegos ABC", "incidencia": 0.002371, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0]}, {"id": "SCI 1.2", "nombre": "Matafuegos K", "incidencia": 0.000382, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0]}, {"id": "SCI 1.3", "nombre": "Carteles de señalización alto impacto clase A", "incidencia": 0.000494, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0]}, {"id": "SCI 1.4", "nombre": "Señalización autónomos", "incidencia": 6.7e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0]}, {"id": "SCI 2.1", "nombre": "Central de alarma", "incidencia": 0.002905, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3]}, {"id": "SCI 2.2", "nombre": "Pulsadores", "incidencia": 0.00305, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3]}, {"id": "SCI 2.3", "nombre": "Bocinas / Sirenas", "incidencia": 0.002033, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3]}, {"id": "SCI 3.1", "nombre": "Detector de humo", "incidencia": 0.000722, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3]}, {"id": "SCI 3.2", "nombre": "Detector de gas", "incidencia": 0.000133, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3]}, {"id": "SCI 3.3", "nombre": "Detector de temperatura", "incidencia": 7.2e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3]}, {"id": "IGN 1.1", "nombre": "Provisión y colocación tanque de GLP", "incidencia": 0.00262, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "IGN 1.2", "nombre": "Provisión y colocación defensa perimetral", "incidencia": 0.00039, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "IGN 1.3", "nombre": "Construcción base de hormigón armado", "incidencia": 0.000839, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "IGN 1.4", "nombre": "Regulador", "incidencia": 0.000642, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "IGN 2.1", "nombre": "Cañerías ø 50mm", "incidencia": 0.000542, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15, 0.2, 0.2, 0.2, 0.15, 0]}, {"id": "IGN 2.2", "nombre": "Cañerías ø 40mm", "incidencia": 0.001503, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15, 0.2, 0.2, 0.2, 0.15, 0]}, {"id": "IGN 2.3", "nombre": "Cañerías ø 32mm", "incidencia": 0.00223, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15, 0.2, 0.2, 0.2, 0.15, 0]}, {"id": "IGN 2.4", "nombre": "Ventilaciones", "incidencia": 4.4e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.15, 0.2, 0.2, 0.2, 0.15, 0]}, {"id": "IGN 3.1", "nombre": "Cocina industrial", "incidencia": 0.000574, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "IGN 3.2", "nombre": "Horno", "incidencia": 0.000525, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "IGN 3.3", "nombre": "Termotanque", "incidencia": 0.000309, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "PJM 1.1", "nombre": "Malla geotextil anti-hierbas", "incidencia": 0.000169, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.3]}, {"id": "PJM 2.1", "nombre": "Provisión y plantado de árboles", "incidencia": 0.00035, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "PJM 2.2", "nombre": "Provisión y plantado de arbustivas, herbáceas, gramíneas, floríferas", "incidencia": 0.000685, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "PJM 2.3", "nombre": "Provisión de semillas para huerta", "incidencia": 5e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "PJM 2.4", "nombre": "Provisión y plantado de panes de césped", "incidencia": 0.000726, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "PJM 3.1", "nombre": "Sistema de riego", "incidencia": 0.003053, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2, 0.3, 0.3, 0.2]}, {"id": "PJM 4.1", "nombre": "Tierra preparada y fertilizante", "incidencia": 9.1e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "PJM 4.2", "nombre": "Chips de corteza", "incidencia": 0.000273, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "PJM 4.3", "nombre": "Granza", "incidencia": 6e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.1", "nombre": "Tótem ingreso al establecimiento", "incidencia": 0.000255, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.2", "nombre": "Indicadores individuales", "incidencia": 0.000355, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.3", "nombre": "Información para padres", "incidencia": 0.000592, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.4", "nombre": "Indicación Sanitarios Administración", "incidencia": 7.9e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.5", "nombre": "Indicación Puertas Salitas", "incidencia": 0.001263, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.6", "nombre": "Espejos Sanitarios Salitas", "incidencia": 0.000316, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.7", "nombre": "Indicadores cromáticos", "incidencia": 0.000632, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.8", "nombre": "Indicadores Aulas", "incidencia": 0.000158, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.9", "nombre": "Indicadores piso", "incidencia": 0.000178, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.10", "nombre": "Gráfica muros aulas", "incidencia": 0.000553, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.11", "nombre": "Área recreativa: galería o patio", "incidencia": 0.000178, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.12", "nombre": "Área recreativa: deportiva circuito motriz", "incidencia": 0.000178, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.13", "nombre": "Gráfica vidrios", "incidencia": 0.000316, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.14", "nombre": "Paneles de motricidad fina", "incidencia": 0.000474, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.15", "nombre": "Indicadores materiales en salas", "incidencia": 0.005526, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.16", "nombre": "Percheros", "incidencia": 0.000138, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 1.17", "nombre": "Panel aprendizaje Sum o área común en galería", "incidencia": 7.9e-05, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 2.1", "nombre": "Placa inaugural", "incidencia": 0.000237, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 2.2", "nombre": "Carteles en ruta doble faz", "incidencia": 0.000745, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 2.3", "nombre": "Tótem ingreso general", "incidencia": 0.000178, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}, {"id": "STC 2.4", "nombre": "Corpóreas nombre institución", "incidencia": 0.00041, "meses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0.5]}];
-var AUTO_DEPS_ORIG = [{"from": "EST 4.1", "to": "ICF 1.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 1.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 1.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 2.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 2.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 2.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 2.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 3.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 3.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 3.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 4.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 4.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 4.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 5.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 5.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 5.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 6.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 6.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 7.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 7.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 7.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 7.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICF 7.5", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "IPF 1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "IPF 2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "IPF 3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "IPF 4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "IPF 5", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "IPF 6", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "IPF 7", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "IPF 8", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 1.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 1.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 1.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 1.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 2.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 2.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 3.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 4.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 4.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 4.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 4.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 4.5", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ICD 4.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ITM 1.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ITM 1.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ITM 1.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ITM 2.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ITM 2.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ITM 3.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ITM 3.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ITM 3.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ITM 3.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ITM 4.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 1.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 1.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 1.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 1.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 1.5", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 1.6", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 2.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 2.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 2.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.5", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.6", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.7", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.8", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.9", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.10", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.11", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.12", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "ISA 3.13", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "EST 4.1", "to": "SCI 1.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "SCI 1.1", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "SCI 1.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "SCI 1.2", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "SCI 1.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "SCI 1.3", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "SCI 1.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "SCI 1.4", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "SCI 2.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "SCI 2.1", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "SCI 2.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "SCI 2.2", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "SCI 2.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "SCI 2.3", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "SCI 3.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "SCI 3.1", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "SCI 3.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "SCI 3.2", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "SCI 3.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "SCI 3.3", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 1.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 1.1", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 1.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 1.2", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 1.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 1.3", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 1.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 1.4", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 2.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 2.1", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 2.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 2.2", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 2.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 2.3", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 2.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 2.4", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 3.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 3.1", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 3.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 3.2", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "IGN 3.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "IGN 3.3", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "EST 4.1", "to": "PJM 1.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "PJM 1.1", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "ISA 1.1", "to": "PJM 1.1", "tipo": "rubro", "dep_rubro": "ISA"}, {"from": "EST 4.1", "to": "PJM 2.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "PJM 2.1", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "ISA 1.1", "to": "PJM 2.1", "tipo": "rubro", "dep_rubro": "ISA"}, {"from": "EST 4.1", "to": "PJM 2.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "PJM 2.2", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "ISA 1.1", "to": "PJM 2.2", "tipo": "rubro", "dep_rubro": "ISA"}, {"from": "EST 4.1", "to": "PJM 2.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "PJM 2.3", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "ISA 1.1", "to": "PJM 2.3", "tipo": "rubro", "dep_rubro": "ISA"}, {"from": "EST 4.1", "to": "PJM 2.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "PJM 2.4", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "ISA 1.1", "to": "PJM 2.4", "tipo": "rubro", "dep_rubro": "ISA"}, {"from": "EST 4.1", "to": "PJM 3.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "PJM 3.1", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "ISA 1.1", "to": "PJM 3.1", "tipo": "rubro", "dep_rubro": "ISA"}, {"from": "EST 4.1", "to": "PJM 4.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "PJM 4.1", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "ISA 1.1", "to": "PJM 4.1", "tipo": "rubro", "dep_rubro": "ISA"}, {"from": "EST 4.1", "to": "PJM 4.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "PJM 4.2", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "ISA 1.1", "to": "PJM 4.2", "tipo": "rubro", "dep_rubro": "ISA"}, {"from": "EST 4.1", "to": "PJM 4.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "ICD 1.1", "to": "PJM 4.3", "tipo": "rubro", "dep_rubro": "ICD"}, {"from": "ISA 1.1", "to": "PJM 4.3", "tipo": "rubro", "dep_rubro": "ISA"}, {"from": "EST 4.1", "to": "STC 1.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.1", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.1", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.2", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.2", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.3", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.3", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.4", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.4", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.5", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.5", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.5", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.6", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.6", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.6", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.7", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.7", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.7", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.8", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.8", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.8", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.9", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.9", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.9", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.10", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.10", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.10", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.11", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.11", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.11", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.12", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.12", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.12", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.13", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.13", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.13", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.14", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.14", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.14", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.15", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.15", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.15", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.16", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.16", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.16", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 1.17", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 1.17", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 1.17", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 2.1", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 2.1", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 2.1", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 2.2", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 2.2", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 2.2", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 2.3", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 2.3", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 2.3", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 4.1", "to": "STC 2.4", "tipo": "rubro", "dep_rubro": "EST"}, {"from": "PJM 1.1", "to": "STC 2.4", "tipo": "rubro", "dep_rubro": "PJM"}, {"from": "SCI 1.1", "to": "STC 2.4", "tipo": "rubro", "dep_rubro": "SCI"}, {"from": "EST 1.2", "to": "EST 1.1", "tipo": "manual", "razon": "Estudio de suelos antes de excavar"}, {"from": "EST 1.1", "to": "EST 2.1", "tipo": "manual", "razon": "Excavar antes de H limpieza"}, {"from": "EST 2.1", "to": "EST 2.2", "tipo": "manual", "razon": "H limpieza antes de fundaciones"}, {"from": "EST 2.2", "to": "EST 2.3", "tipo": "manual", "razon": "Zapatas antes de vigas de fundacion"}, {"from": "EST 2.3", "to": "EST 4.1", "tipo": "manual", "razon": "Vigas fundacion antes de mamposteria"}, {"from": "EST 2.3", "to": "EST 2.4", "tipo": "manual", "razon": "Vigas fundacion antes de columnas"}, {"from": "EST 2.4", "to": "EST 2.5", "tipo": "manual", "razon": "Columnas antes de vigas"}, {"from": "EST 2.5", "to": "EST 2.7", "tipo": "manual", "razon": "Vigas antes de losas macizas visto"}, {"from": "EST 2.5", "to": "EST 2.8", "tipo": "manual", "razon": "Vigas antes de losas macizas"}, {"from": "EST 2.4", "to": "EST 3.1", "tipo": "manual", "razon": "Columnas antes de estructura metalica"}, {"from": "EST 2.5", "to": "EST 3.1", "tipo": "manual", "razon": "Vigas antes de estructura metalica"}, {"from": "EST 2.4", "to": "EST 2.6", "tipo": "manual", "razon": "Columnas antes de tabiques"}, {"from": "ARQ 1.3.1", "to": "EST 1.1", "tipo": "manual", "razon": "Doc tecnica aprobada antes de excavar"}, {"from": "ARQ 1.2.1", "to": "EST 1.1", "tipo": "manual", "razon": "Plan HyS aprobado antes de excavar"}, {"from": "EST 3.1", "to": "ARQ 4.1", "tipo": "manual", "razon": "Estructura metalica antes de cubierta"}, {"from": "ARQ 4.1", "to": "ARQ 4.2", "tipo": "manual", "razon": "Cubierta antes de zinquerias"}, {"from": "EST 2.7", "to": "ARQ 2.1.3", "tipo": "manual", "razon": "Losas antes de impermeabilizacion"}, {"from": "EST 4.1", "to": "ARQ 3.1", "tipo": "manual", "razon": "Mamposteria antes de revoque grueso impermeable"}, {"from": "EST 4.1", "to": "ARQ 3.2", "tipo": "manual", "razon": "Mamposteria antes de revoque grueso y fino"}, {"from": "ARQ 4.1", "to": "ICF 3.1", "tipo": "manual", "razon": "Techo cerrado antes de canarias contra incendio"}, {"from": "ARQ 4.1", "to": "ICD 1.1", "tipo": "manual", "razon": "Techo cerrado antes de bandejas portacables"}, {"from": "ARQ 4.1", "to": "ISA 1.2", "tipo": "manual", "razon": "Techo cerrado antes de canarias cloacales"}, {"from": "ARQ 4.1", "to": "ITM 1.1", "tipo": "manual", "razon": "Techo cerrado antes de equipos HVAC"}, {"from": "ARQ 5.1.1", "to": "ARQ 5.2.1", "tipo": "manual", "razon": "Contrapiso interior antes de exterior"}, {"from": "ARQ 5.1.1", "to": "ARQ 6.1.1", "tipo": "manual", "razon": "Contrapiso antes de baldosas granito"}, {"from": "ARQ 5.1.1", "to": "ARQ 10.1.1", "tipo": "manual", "razon": "Contrapiso antes de porcelanatos"}, {"from": "ARQ 5.2.1", "to": "ARQ 5.2.3", "tipo": "manual", "razon": "Contrapiso llaneado antes de estampado"}, {"from": "ARQ 3.2", "to": "ARQ 11.1.1", "tipo": "manual", "razon": "Revoque antes de ventanas"}, {"from": "ARQ 3.2", "to": "ARQ 11.2.1", "tipo": "manual", "razon": "Revoque antes de puertas madera"}, {"from": "ARQ 3.2", "to": "ARQ 11.3.1", "tipo": "manual", "razon": "Revoque antes de puertas metalicas"}, {"from": "ARQ 11.1.1", "to": "ARQ 11.4.1", "tipo": "manual", "razon": "Carpinteria antes de vidrios laminados"}, {"from": "ARQ 11.1.1", "to": "ARQ 13.1.1", "tipo": "manual", "razon": "Carpinterias antes de pintar"}, {"from": "ARQ 3.2", "to": "ARQ 13.1.1", "tipo": "manual", "razon": "Revoque fino antes de latex interior"}, {"from": "ARQ 3.2", "to": "ARQ 13.2.1", "tipo": "manual", "razon": "Revoque fino antes de latex exterior"}, {"from": "ARQ 3.1", "to": "ARQ 13.1.4", "tipo": "manual", "razon": "Revoque impermeable antes de proteccion HV"}, {"from": "ARQ 9.1", "to": "ARQ 13.1.3", "tipo": "manual", "razon": "Cielorraso antes de pintura cielorraso"}, {"from": "ARQ 8.1.1", "to": "ARQ 8.2.1", "tipo": "manual", "razon": "Tabique yeso antes de divisor box sanitario"}, {"from": "ISA 3.3", "to": "ISA 3.4", "tipo": "manual", "razon": "Canerias antes de inodoros"}, {"from": "ISA 3.3", "to": "ISA 3.5", "tipo": "manual", "razon": "Canerias antes de lavatorios"}, {"from": "ISA 3.3", "to": "ISA 3.6", "tipo": "manual", "razon": "Canerias antes de pileton"}, {"from": "ICF 1.2", "to": "ICF 4.1", "tipo": "manual", "razon": "Tablero general antes de conductores"}, {"from": "ICF 1.3", "to": "ICF 4.1", "tipo": "manual", "razon": "Tableros seccionales antes de conductores"}, {"from": "ICF 4.1", "to": "ICF 5.1", "tipo": "manual", "razon": "Conductores antes de iluminacion"}, {"from": "IGN 2.3", "to": "IGN 3.1", "tipo": "manual", "razon": "Caneria gas antes de cocina industrial"}, {"from": "IGN 2.3", "to": "IGN 3.2", "tipo": "manual", "razon": "Caneria gas antes de horno"}, {"from": "IGN 2.3", "to": "IGN 3.3", "tipo": "manual", "razon": "Caneria gas antes de termotanque"}, {"from": "IGN 1.1", "to": "IGN 2.1", "tipo": "manual", "razon": "Tanque GLP antes de canerias secundarias"}, {"from": "ITM 3.1", "to": "ITM 3.2", "tipo": "manual", "razon": "Calderas antes de radiadores"}, {"from": "ARQ 4.1", "to": "IPF 8", "tipo": "manual", "razon": "Cubierta antes de paneles solares"}, {"from": "IPF 8", "to": "IPF 2", "tipo": "manual", "razon": "Paneles antes de inversor"}, {"from": "ARQ 16.1", "to": "ARQ 16.5", "tipo": "manual", "razon": "Veredas antes de cierre perimetral"}, {"from": "PJM 3.1", "to": "PJM 2.1", "tipo": "manual", "razon": "Riego antes de arboles"}, {"from": "PJM 3.1", "to": "PJM 2.2", "tipo": "manual", "razon": "Riego antes de arbustivas"}, {"from": "PJM 3.1", "to": "PJM 2.4", "tipo": "manual", "razon": "Riego antes de cesped"}, {"from": "ARQ 6.1.1", "to": "ARQ 14.1.3", "tipo": "manual", "razon": "Pisos antes de muebles"}, {"from": "ARQ 6.1.1", "to": "ARQ 14.2.1", "tipo": "manual", "razon": "Pisos antes de bancos"}, {"from": "ARQ 13.1.1", "to": "STC 1.1", "tipo": "manual", "razon": "Pinturas antes de senaletica"}, {"from": "ARQ 13.1.1", "to": "STC 1.5", "tipo": "manual", "razon": "Pinturas antes de indicadores puertas"}, {"from": "ARQ 11.1.1", "to": "STC 1.13", "tipo": "manual", "razon": "Carpinterias antes de grafica vidrios"}, {"from": "ICF 5.1", "to": "ARQ 1.4.1", "tipo": "manual", "razon": "Iluminacion antes de manuales operacion"}, {"from": "ITM 3.2", "to": "ARQ 1.4.1", "tipo": "manual", "razon": "Radiadores antes de manuales operacion"}, {"from": "ISA 3.4", "to": "ARQ 1.4.1", "tipo": "manual", "razon": "Artefactos sanitarios antes de manuales"}, {"from": "SCI 1.1", "to": "ARQ 1.4.3", "tipo": "manual", "razon": "Matafuegos antes de documentacion conforme"}];
-</script>
-<script>
-
-// ============================================================
-// LOCALSTORAGE — PERSISTENCIA
-// ============================================================
-var STORAGE_KEY = 'sim_obra_uspallata_v2';
-
-function saveState() {
-  try {
-    // Guardar solo los ítems manuales (la cascada se recalcula sola)
-    var manualItems = {};
-    var keys = Object.keys(selectedItems);
-    for (var i = 0; i < keys.length; i++) {
-      if (!selectedItems[keys[i]].isCascade) {
-        manualItems[keys[i]] = { delay: selectedItems[keys[i]].delay };
-      }
-    }
-    // Dependencias manuales solamente
-    var manualDeps = [];
-    for (var i = 0; i < deps.length; i++) {
-      if (deps[i].tipo === 'manual') manualDeps.push(deps[i]);
-    }
-    var state = {
-      manualItems: manualItems,
-      spiData: spiData,
-      manualDeps: manualDeps,
-      savedAt: new Date().toISOString()
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    showSaveIndicator();
-  } catch(e) { console.warn('No se pudo guardar:', e); }
-}
-
-function loadState() {
-  try {
-    var raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return false;
-    var state = JSON.parse(raw);
-    // Restaurar ítems manuales
-    if (state.manualItems) {
-      var mkeys = Object.keys(state.manualItems);
-      for (var i = 0; i < mkeys.length; i++) {
-        var id = mkeys[i];
-        if (itemMap[id]) {
-          var item = itemMap[id];
-          selectedItems[id] = { id: item.id, nombre: item.nombre, incidencia: item.incidencia, meses: item.meses, delay: state.manualItems[id].delay, isCascade: false };
-        }
-      }
-    }
-    // Restaurar SPI
-    if (state.spiData) {
-      for (var i = 0; i < state.spiData.length && i < spiData.length; i++) {
-        spiData[i] = state.spiData[i];
-      }
-    }
-    // Restaurar dependencias manuales
-    if (state.manualDeps) {
-      for (var i = 0; i < state.manualDeps.length; i++) {
-        var d = state.manualDeps[i];
-        var exists = false;
-        for (var j = 0; j < deps.length; j++) {
-          if (deps[j].from === d.from && deps[j].to === d.to) { exists = true; break; }
-        }
-        if (!exists) deps.push(d);
-      }
-    }
-    return state.savedAt || true;
-  } catch(e) { console.warn('No se pudo cargar estado:', e); return false; }
-}
-
-function clearState() {
-  if (!confirm('Borrar todo el estado guardado y empezar de cero?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  selectedItems = {};
-  for (var i = 0; i < spiData.length; i++) spiData[i] = null;
-  deps = JSON.parse(JSON.stringify(AUTO_DEPS_ORIG));
-  // Limpiar inputs SPI
-  var spiRows = document.getElementById('spiInputRows');
-  if (spiRows) spiRows.innerHTML = '';
-  renderAll();
-  showToast('Estado borrado');
-}
-
-function showSaveIndicator() {
-  var el = document.getElementById('saveIndicator');
-  if (!el) return;
-  el.style.opacity = '1';
-  el.textContent = 'Guardado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
-  clearTimeout(el._timer);
-  el._timer = setTimeout(function() { el.style.opacity = '0.4'; }, 2000);
-}
-
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.style.opacity = '1';
-  t.style.transform = 'translateY(0)';
-  setTimeout(function() { t.style.opacity = '0'; t.style.transform = 'translateY(8px)'; }, 2500);
-}
-
-// ============================================================
-// ESTADO GLOBAL
-// ============================================================
-var selectedItems = {};
-var activeRubro = 'TODOS';
-var searchTerm = '';
-var charts = {};
-var spiData = [];
-var deps = [];
-var itemMap = {};
-var NUM_MESES = 17;
-
-// ============================================================
-// INIT
-// ============================================================
-function init() {
-  // Inicializar spiData
-  for (var i = 0; i < NUM_MESES; i++) spiData.push(null);
-  
-  // Clonar deps
-  deps = JSON.parse(JSON.stringify(AUTO_DEPS_ORIG));
-  
-  // Construir mapa
-  for (var j = 0; j < PLAN_DATA.length; j++) {
-    itemMap[PLAN_DATA[j].id] = PLAN_DATA[j];
-  }
-
-  // Cargar estado guardado
-  var savedAt = loadState();
-  if (savedAt) {
-    updateCascade();
-    setTimeout(function() {
-      var ts = typeof savedAt === 'string' ? new Date(savedAt).toLocaleString('es-AR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
-      showToast('Estado restaurado' + (ts ? ' \u2014 ' + ts : ''));
-      showSaveIndicator();
-    }, 600);
-  }
-
-  buildRubroChips();
-  renderItemsList();
-  renderMetrics();
-  renderCurvaSChart();
-  renderImpactTable();
-}
-
-// ============================================================
-// TABS
-// ============================================================
-function showTab(name) {
-  var tabs = document.querySelectorAll('.tab-content');
-  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
-  var btns = document.querySelectorAll('.tab-btn');
-  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
-  document.getElementById('tab-' + name).classList.add('active');
-  // Activar botón correspondiente
-  var allBtns = document.querySelectorAll('.tab-btn');
-  for (var i = 0; i < allBtns.length; i++) {
-    if (allBtns[i].getAttribute('data-tab') === name) allBtns[i].classList.add('active');
-  }
-  if (name === 'deps') renderDepsTable();
-  if (name === 'spi') { buildSPIInputs(); }
-}
-
-// ============================================================
-// SIDEBAR
-// ============================================================
-function getRubro(id) { return id.split(' ')[0]; }
-
-function buildRubroChips() {
-  var rubroSet = ['TODOS'];
-  for (var i = 0; i < PLAN_DATA.length; i++) {
-    var r = getRubro(PLAN_DATA[i].id);
-    if (rubroSet.indexOf(r) === -1) rubroSet.push(r);
-  }
-  var c = document.getElementById('rubroChips');
-  c.innerHTML = '';
-  for (var i = 0; i < rubroSet.length; i++) {
-    (function(r) {
-      var b = document.createElement('button');
-      b.className = 'chip' + (r === 'TODOS' ? ' active' : '');
-      b.textContent = r;
-      b.onclick = function() {
-        activeRubro = r;
-        var chips = document.querySelectorAll('.chip');
-        for (var j = 0; j < chips.length; j++) chips[j].classList.remove('active');
-        b.classList.add('active');
-        renderItemsList();
-      };
-      c.appendChild(b);
-    })(rubroSet[i]);
-  }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('searchInput').addEventListener('input', function(e) {
-    searchTerm = e.target.value.toLowerCase();
-    renderItemsList();
-  });
-});
-
-function renderItemsList() {
-  var filtered = [];
-  for (var i = 0; i < PLAN_DATA.length; i++) {
-    var it = PLAN_DATA[i];
-    var matchR = activeRubro === 'TODOS' || getRubro(it.id) === activeRubro;
-    var matchS = !searchTerm || it.id.toLowerCase().indexOf(searchTerm) >= 0 || it.nombre.toLowerCase().indexOf(searchTerm) >= 0;
-    if (matchR && matchS) filtered.push(it);
-  }
-  var c = document.getElementById('itemsList');
-  c.innerHTML = '';
-  for (var i = 0; i < filtered.length; i++) {
-    (function(item) {
-      var isSel = !!selectedItems[item.id];
-      var isCasc = isSel && selectedItems[item.id].isCascade;
-      var dur = 0;
-      var first = 0;
-      for (var j = 0; j < item.meses.length; j++) {
-        if (item.meses[j] > 0) { if (first === 0) first = j + 1; dur++; }
-      }
-      var div = document.createElement('div');
-      div.className = 'item-row' + (isCasc ? ' cascade' : isSel ? ' sel' : '');
-      var html = '<div class="item-id' + (isCasc ? ' cascade-id' : '') + '">' + item.id + '</div>';
-      html += '<div class="item-name">' + item.nombre + '</div>';
-      html += '<div class="item-foot">';
-      html += '<span class="item-inc">Inc: ' + (item.incidencia * 100).toFixed(2) + '%</span>';
-      html += '<span class="item-dur">M' + first + ' · ' + dur + 'm</span>';
-      if (isCasc) html += '<span class="cascade-tag">CASCADE</span>';
-      html += '<div class="item-check">' + (isSel ? '✓' : '') + '</div>';
-      html += '</div>';
-      div.innerHTML = html;
-      div.onclick = function() { toggleItem(item); };
-      c.appendChild(div);
-    })(filtered[i]);
-  }
-}
-
-// ============================================================
-// SELECCIÓN + CASCADA
-// ============================================================
-function toggleItem(item) {
-  if (selectedItems[item.id]) {
-    if (!selectedItems[item.id].isCascade) {
-      delete selectedItems[item.id];
-      cleanOrphanCascades();
-    }
-  } else {
-    var copy = { id: item.id, nombre: item.nombre, incidencia: item.incidencia, meses: item.meses, delay: 1, isCascade: false };
-    selectedItems[item.id] = copy;
-  }
-  updateCascade();
-  renderAll();
-  saveState();
-}
-
-function cleanOrphanCascades() {
-  var keys = Object.keys(selectedItems);
-  for (var i = 0; i < keys.length; i++) {
-    var id = keys[i];
-    if (!selectedItems[id] || !selectedItems[id].isCascade) continue;
-    var hasManualCause = false;
-    var manualKeys = Object.keys(selectedItems);
-    for (var j = 0; j < manualKeys.length; j++) {
-      var sid = manualKeys[j];
-      if (!selectedItems[sid] || selectedItems[sid].isCascade) continue;
-      for (var k = 0; k < deps.length; k++) {
-        if (deps[k].from === sid && deps[k].to === id) { hasManualCause = true; break; }
-      }
-      if (hasManualCause) break;
-    }
-    if (!hasManualCause) delete selectedItems[id];
-  }
-}
-
-function updateCascade() {
-  // Limpiar cascadas previas
-  var keys = Object.keys(selectedItems);
-  for (var i = 0; i < keys.length; i++) {
-    if (selectedItems[keys[i]] && selectedItems[keys[i]].isCascade) delete selectedItems[keys[i]];
-  }
-  // Propagar desde manuales
-  var manualKeys = Object.keys(selectedItems);
-  for (var i = 0; i < manualKeys.length; i++) {
-    var src = selectedItems[manualKeys[i]];
-    if (!src || src.isCascade || src.delay <= 0) continue;
-    propagateCascade(src.id, src.delay, {});
-  }
-}
-
-function propagateCascade(fromId, delay, visited) {
-  if (visited[fromId]) return;
-  visited[fromId] = true;
-  for (var i = 0; i < deps.length; i++) {
-    if (deps[i].from !== fromId) continue;
-    var childId = deps[i].to;
-    if (!itemMap[childId]) continue;
-    if (selectedItems[childId] && !selectedItems[childId].isCascade) continue; // manual, no pisar
-    var item = itemMap[childId];
-    if (!selectedItems[childId]) {
-      selectedItems[childId] = { id: item.id, nombre: item.nombre, incidencia: item.incidencia, meses: item.meses, delay: delay, isCascade: true };
-    } else {
-      selectedItems[childId].delay = Math.max(selectedItems[childId].delay, delay);
-    }
-    propagateCascade(childId, delay, visited);
-  }
-}
-
-function setDelay(id, val) {
-  if (selectedItems[id]) {
-    selectedItems[id].delay = parseFloat(val) || 0;
-    updateCascade();
-    renderAll();
-    saveState();
-  }
-}
-
-function removeItem(id) {
-  delete selectedItems[id];
-  cleanOrphanCascades();
-  updateCascade();
-  renderAll();
-  saveState();
-}
-
-function clearAll() {
-  selectedItems = {};
-  renderAll();
-}
-
-// ============================================================
-// RENDER SELECTED LIST
-// ============================================================
-function renderSelRows() {
-  var c = document.getElementById('selRows');
-  var all = Object.values(selectedItems);
-  if (!all.length) {
-    c.innerHTML = '<div class="empty-sel">\u2190 Seleccion\u00e1 \u00edtems para simular atrasos</div>';
-    return;
-  }
-  var manual = all.filter(function(x) { return !x.isCascade; });
-  var cascade = all.filter(function(x) { return x.isCascade; });
-  var sorted = manual.concat(cascade);
-  c.innerHTML = '';
-  for (var i = 0; i < sorted.length; i++) {
-    (function(item) {
-      var row = document.createElement('div');
-      row.className = 'sel-row' + (item.isCascade ? ' is-cascade' : '');
-      var html = '<span class="sr-id">' + item.id + '</span>';
-      html += '<span class="sr-name" title="' + item.nombre + '">' + item.nombre + '</span>';
-      if (item.isCascade) {
-        html += '<span class="cascade-lbl">\u2191 cascada (+' + item.delay + 'm)</span>';
-      } else {
-        html += '<div class="sr-delay"><label>Atraso:</label>';
-        html += '<input class="delay-inp" type="number" min="0" max="12" step="0.5" value="' + item.delay + '" data-id="' + item.id + '" onchange="setDelay(\'' + item.id + '\', this.value)"></div>';
-        html += '<button class="rm-btn" onclick="removeItem(\'' + item.id + '\')">&#x2715;</button>';
-      }
-      row.innerHTML = html;
-      c.appendChild(row);
-    })(sorted[i]);
-  }
-}
-
-// ============================================================
-// CURVA S
-// ============================================================
-function calcCurvaS(delays) {
-  var maxMesNec = NUM_MESES;
-  for (var i = 0; i < PLAN_DATA.length; i++) {
-    var item = PLAN_DATA[i];
-    var d = delays[item.id] || 0;
-    if (d > 0) {
-      for (var j = 0; j < item.meses.length; j++) {
-        if (item.meses[j] > 0) maxMesNec = Math.max(maxMesNec, j + d + 1);
-      }
-    }
-  }
-  var maxMes = maxMesNec + 2;
-  var mensual = [];
-  for (var i = 0; i < maxMes; i++) mensual.push(0);
-  for (var i = 0; i < PLAN_DATA.length; i++) {
-    var item = PLAN_DATA[i];
-    var d = delays[item.id] || 0;
-    for (var j = 0; j < item.meses.length; j++) {
-      if (item.meses[j] > 0 && j + d < maxMes) mensual[j + d] += item.incidencia * item.meses[j];
-    }
-  }
-  var acum = [];
-  var suma = 0;
-  for (var i = 0; i < maxMes; i++) { suma += mensual[i]; acum.push(Math.min(suma, 1) * 100); }
-  return acum;
-}
-
-function getPlazoCierre(curva) {
-  for (var i = 0; i < curva.length; i++) if (curva[i] >= 99.9) return i + 1;
-  return curva.length;
-}
-
-function padTo(arr, len) {
-  var a = arr.slice();
-  var last = a.length > 0 ? a[a.length - 1] : 0;
-  while (a.length < len) a.push(last >= 99.9 ? 100 : last);
-  return a;
-}
-
-// ============================================================
-// GRÁFICO CURVA S
-// ============================================================
-function renderCurvaSChart() {
-  var allDelays = {};
-  var vals = Object.values(selectedItems);
-  for (var i = 0; i < vals.length; i++) allDelays[vals[i].id] = vals[i].delay;
-
-  var orig = calcCurvaS({});
-  var sim = calcCurvaS(allDelays);
-  var hasD = false;
-  for (var i = 0; i < vals.length; i++) { if (vals[i].delay > 0) { hasD = true; break; } }
-
-  var maxLen = Math.max(orig.length, sim.length);
-  var labels = [];
-  for (var i = 0; i < maxLen; i++) labels.push('M' + (i + 1));
-
-  var datasets = [
-    { label: 'Plan original', data: padTo(orig, maxLen), borderColor: '#3aafe0', backgroundColor: 'rgba(58,175,224,0.07)', borderWidth: 2, pointRadius: 2.5, fill: true, tension: 0.3 }
-  ];
-  if (hasD) {
-    datasets.push({ label: 'Con atrasos', data: padTo(sim, maxLen), borderColor: '#e05c3a', backgroundColor: 'rgba(224,92,58,0.05)', borderWidth: 2, borderDash: [6, 3], pointRadius: 2.5, fill: true, tension: 0.3 });
-  }
-
-  var ctx = document.getElementById('curvaSChart').getContext('2d');
-  if (charts.curvaS) {
-    charts.curvaS.data.labels = labels;
-    charts.curvaS.data.datasets = datasets;
-    charts.curvaS.update('none');
-    return;
-  }
-  charts.curvaS = new Chart(ctx, {
-    type: 'line',
-    data: { labels: labels, datasets: datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
-      plugins: {
-        legend: { display: false },
-        tooltip: { backgroundColor: '#1d2530', borderColor: '#253040', borderWidth: 1, titleColor: '#768390', bodyColor: '#cdd9e5' }
-      },
-      scales: {
-        x: { grid: { color: 'rgba(37,48,64,0.6)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 } } },
-        y: { min: 0, max: 100, grid: { color: 'rgba(37,48,64,0.6)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 }, callback: function(v) { return v + '%'; } } }
-      }
-    }
-  });
-}
-
-// ============================================================
-// MÉTRICAS
-// ============================================================
-function renderMetrics() {
-  var allDelays = {};
-  var vals = Object.values(selectedItems);
-  for (var i = 0; i < vals.length; i++) allDelays[vals[i].id] = vals[i].delay;
-
-  var orig = calcCurvaS({});
-  var sim = calcCurvaS(allDelays);
-  var plazoO = getPlazoCierre(orig);
-  var plazoS = getPlazoCierre(sim);
-  var diff = plazoS - plazoO;
-  var nManual = 0, nCasc = 0, incAf = 0;
-  for (var i = 0; i < vals.length; i++) {
-    if (vals[i].isCascade) nCasc++; else nManual++;
-    incAf += vals[i].incidencia;
-  }
-  var cls = diff === 0 ? 'ok' : diff <= 2 ? 'warn' : 'danger';
-  var incCls = incAf > 0.3 ? 'danger' : incAf > 0.1 ? 'warn' : 'ok';
-  document.getElementById('metricsBar').innerHTML =
-    '<div class="metric"><div class="met-label">Plazo original</div><div class="met-val ok">' + plazoO + 'm</div><div class="met-sub">Sin atrasos</div></div>' +
-    '<div class="metric"><div class="met-label">Plazo simulado</div><div class="met-val ' + cls + '">' + plazoS + 'm</div><div class="met-sub">' + (diff === 0 ? 'Sin cambios' : '+' + diff + ' mes' + (diff > 1 ? 'es' : '')) + '</div></div>' +
-    '<div class="metric"><div class="met-label">Manuales</div><div class="met-val warn">' + nManual + '</div><div class="met-sub">Seleccionados</div></div>' +
-    '<div class="metric"><div class="met-label">Cascada</div><div class="met-val danger">' + nCasc + '</div><div class="met-sub">Propagados auto</div></div>' +
-    '<div class="metric"><div class="met-label">Incidencia</div><div class="met-val ' + incCls + '">' + (incAf * 100).toFixed(1) + '%</div><div class="met-sub">Afectada</div></div>';
-}
-
-// ============================================================
-// TABLA IMPACTO
-// ============================================================
-function renderImpactTable() {
-  var c = document.getElementById('impactTable');
-  var items = Object.values(selectedItems).filter(function(x) { return x.delay > 0; });
-  if (!items.length) {
-    c.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text3);font-size:10px;font-family:IBM Plex Mono,monospace">Asign\u00e1 atrasos para ver el impacto</div>';
-    return;
-  }
-  items.sort(function(a, b) { return b.incidencia - a.incidencia; });
-  var html = '<table class="impact-tbl"><thead><tr><th>\u00cdtem</th><th>Nombre</th><th>Inc.</th><th>Tipo</th><th>Fin orig.</th><th>Fin sim.</th><th>Extensi\u00f3n</th></tr></thead><tbody>';
-  for (var i = 0; i < items.length; i++) {
-    var r = items[i];
-    var lastO = 0;
-    for (var j = 0; j < r.meses.length; j++) { if (r.meses[j] > 0) lastO = j + 1; }
-    var lastS = lastO + r.delay;
-    var color = r.isCascade ? '#e05c3a' : '#f7c948';
-    var tipo = r.isCascade ? '<span style="font-size:8px;padding:1px 4px;border:1px solid rgba(224,92,58,.3);background:rgba(224,92,58,.1);color:#e05c3a">cascada</span>' : '<span style="color:#f7c948">manual</span>';
-    html += '<tr><td style="color:' + color + '">' + r.id + '</td><td class="name-col">' + r.nombre + '</td><td style="color:var(--text2)">' + (r.incidencia * 100).toFixed(2) + '%</td><td>' + tipo + '</td><td style="color:#3aafe0">M' + lastO + '</td><td style="color:#e05c3a">M' + lastS + '</td><td style="color:#e05c3a;font-weight:600">+' + r.delay + 'm</td></tr>';
-  }
-  html += '</tbody></table>';
-  c.innerHTML = html;
-}
-
-// ============================================================
-// RENDER ALL
-// ============================================================
-function renderAll() {
-  renderItemsList();
-  renderSelRows();
-  renderMetrics();
-  renderCurvaSChart();
-  renderImpactTable();
-  calcRecovery();
-}
-
-// ============================================================
-// SPI
-// ============================================================
-function buildSPIInputs() {
-  var c = document.getElementById('spiInputRows');
-  if (c.children.length > 0) return;
-  var curvaPlan = calcCurvaS({});
-  for (var m = 0; m < NUM_MESES; m++) {
-    (function(mes) {
-      var row = document.createElement('div');
-      row.className = 'spi-mes-row';
-      var planVal = curvaPlan[mes].toFixed(1);
-      row.innerHTML =
-        '<span class="spi-mes-label">Mes ' + (mes + 1) + '</span>' +
-        '<input class="spi-inp' + (spiData[mes] !== null ? ' has-val' : '') + '" type="number" min="0" max="100" step="0.1" placeholder="Plan: ' + planVal + '%" ' +
-        (spiData[mes] !== null ? 'value="' + spiData[mes] + '"' : '') +
-        ' onchange="spiData[' + mes + '] = this.value !== \'\' ? parseFloat(this.value) : null; this.className = \'spi-inp\' + (spiData[' + mes + '] !== null ? \' has-val\' : \'\')">' +
-        '<span class="spi-pct">%</span>';
-      c.appendChild(row);
-    })(m);
-  }
-}
-
-function calcSPI() {
-  var curvaPlan = calcCurvaS({});
-  var lastReal = -1;
-  for (var i = 0; i < NUM_MESES; i++) { if (spiData[i] !== null) lastReal = i; }
-  if (lastReal < 0) { alert('Ingres\u00e1 al menos un mes de avance real.'); return; }
-
-  var realAcum = spiData[lastReal];
-  var planAcum = curvaPlan[lastReal];
-  var spi = planAcum > 0 ? realAcum / planAcum : 1;
-
-  // Proyección
-  var proyData = [];
-  for (var i = 0; i <= lastReal; i++) proyData.push(spiData[i] !== null ? spiData[i] : null);
-  var proyAccum = realAcum;
-  var mesProyFin = lastReal + 1;
-  for (var i = lastReal + 1; i < NUM_MESES + 15; i++) {
-    var ritmoPlan = i < curvaPlan.length ? curvaPlan[i] - curvaPlan[i - 1] : 0;
-    proyAccum += ritmoPlan * spi;
-    proyData.push(Math.min(proyAccum, 100));
-    if (proyAccum >= 99.9) { mesProyFin = i + 1; break; }
-    mesProyFin = i + 1;
-  }
-
-  // SPI mensual
-  var spiMensual = [];
-  for (var i = 0; i <= lastReal; i++) {
-    if (spiData[i] === null) { spiMensual.push(null); continue; }
-    var pv = curvaPlan[i];
-    spiMensual.push(pv > 0 ? parseFloat((spiData[i] / pv).toFixed(3)) : 1);
-  }
-
-  // Métricas SPI
-  var spiEl = document.getElementById('spiVal');
-  spiEl.textContent = spi.toFixed(3);
-  spiEl.className = 'met-val ' + (spi >= 0.95 ? 'ok' : spi >= 0.8 ? 'warn' : 'danger');
-  document.getElementById('spiPlan').textContent = planAcum.toFixed(1) + '%';
-  var endEl = document.getElementById('spiEnd');
-  endEl.textContent = 'Mes ' + mesProyFin;
-  var diffFin = mesProyFin - NUM_MESES;
-  endEl.className = 'met-val ' + (diffFin <= 0 ? 'ok' : diffFin <= 2 ? 'warn' : 'danger');
-
-  renderSPICharts(curvaPlan, proyData, spiMensual, lastReal, mesProyFin);
-  saveState();
-}
-
-function renderSPICharts(curvaPlan, proyData, spiMensual, lastReal, mesProyFin) {
-  var maxLen = Math.max(NUM_MESES, mesProyFin + 1);
-  var labels = [];
-  for (var i = 0; i < maxLen; i++) labels.push('M' + (i + 1));
-  var planPad = padTo(curvaPlan, maxLen);
-
-  // Dataset real (solo hasta lastReal)
-  var realArr = [];
-  for (var i = 0; i < maxLen; i++) realArr.push(i <= lastReal && spiData[i] !== null ? spiData[i] : null);
-
-  // Dataset proyección (desde lastReal+1)
-  var proyArr = [];
-  for (var i = 0; i < maxLen; i++) {
-    if (i < proyData.length) proyArr.push(i > lastReal ? proyData[i] : null);
-    else proyArr.push(null);
-  }
-  // Conectar en lastReal
-  if (lastReal >= 0 && lastReal < proyArr.length) proyArr[lastReal] = spiData[lastReal];
-
-  var datasets1 = [
-    { label: 'Plan original', data: planPad, borderColor: '#3aafe0', backgroundColor: 'rgba(58,175,224,0.06)', borderWidth: 2, pointRadius: 2, fill: true, tension: 0.3 },
-    { label: 'Avance real', data: realArr, borderColor: '#3fb950', backgroundColor: 'rgba(63,185,80,0.08)', borderWidth: 2, pointRadius: 3, fill: true, tension: 0.3, spanGaps: false },
-    { label: 'Proyecci\u00f3n', data: proyArr, borderColor: '#f7c948', backgroundColor: 'rgba(247,201,72,0.04)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 1.5, fill: true, tension: 0.3, spanGaps: false }
-  ];
-
-  var opts = { responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
-    plugins: { legend: { labels: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 } } }, tooltip: { backgroundColor: '#1d2530', borderColor: '#253040', borderWidth: 1, bodyColor: '#cdd9e5' } },
-    scales: { x: { grid: { color: 'rgba(37,48,64,0.5)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 } } }, y: { min: 0, max: 100, grid: { color: 'rgba(37,48,64,0.5)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 }, callback: function(v) { return v + '%'; } } } }
-  };
-
-  var ctx1 = document.getElementById('spiCurveChart').getContext('2d');
-  if (charts.spiCurve) { charts.spiCurve.data.labels = labels; charts.spiCurve.data.datasets = datasets1; charts.spiCurve.update('none'); }
-  else charts.spiCurve = new Chart(ctx1, { type: 'line', data: { labels: labels, datasets: datasets1 }, options: opts });
-
-  // Bar SPI
-  var spiColors = spiMensual.map(function(v) { return v === null ? 'transparent' : v >= 0.95 ? '#3fb950' : v >= 0.8 ? '#f7c948' : '#e05c3a'; });
-  var spiLabels = [];
-  for (var i = 0; i < spiMensual.length; i++) spiLabels.push('M' + (i + 1));
-  var ctx2 = document.getElementById('spiBarChart').getContext('2d');
-  if (charts.spiBar) { charts.spiBar.data.labels = spiLabels; charts.spiBar.data.datasets[0].data = spiMensual; charts.spiBar.data.datasets[0].backgroundColor = spiColors; charts.spiBar.update('none'); }
-  else charts.spiBar = new Chart(ctx2, {
-    type: 'bar',
-    data: { labels: spiLabels, datasets: [{ label: 'SPI', data: spiMensual, backgroundColor: spiColors, borderRadius: 2 }] },
-    options: { responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
-      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1d2530', borderColor: '#253040', borderWidth: 1, bodyColor: '#cdd9e5', callbacks: { label: function(c) { return ' SPI: ' + c.parsed.y.toFixed(3); } } } },
-      scales: { x: { grid: { color: 'rgba(37,48,64,0.5)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 } } }, y: { min: 0, max: 1.5, grid: { color: 'rgba(37,48,64,0.5)' }, ticks: { color: '#768390', font: { family: 'IBM Plex Mono', size: 9 } } } }
-    }
-  });
-}
-
-// ============================================================
-// DEPENDENCIAS
-// ============================================================
-function renderDepsTable() {
-  var tbody = document.getElementById('depsTableBody');
-  var html = '';
-  for (var i = 0; i < deps.length; i++) {
-    var d = deps[i];
-    var nameFrom = itemMap[d.from] ? itemMap[d.from].nombre.substring(0, 35) : '';
-    var nameTo = itemMap[d.to] ? itemMap[d.to].nombre.substring(0, 35) : '';
-    var tipoClass = d.tipo === 'jerarquia' ? 'jerarquia' : d.tipo === 'manual' ? 'manual' : 'rubro';
-    html += '<tr>';
-    html += '<td class="dep-from">' + d.from + '</td>';
-    html += '<td class="dep-to">' + d.to + '</td>';
-    html += '<td><span class="dep-tipo ' + tipoClass + '">' + d.tipo + '</span></td>';
-    html += '<td style="color:var(--text2)">' + nameFrom + '</td>';
-    html += '<td style="color:var(--text2)">' + nameTo + '</td>';
-    html += '<td><button class="dep-del-btn" onclick="deleteDep(' + i + ')">&#x2715;</button></td>';
-    html += '</tr>';
-  }
-  tbody.innerHTML = html;
-  document.getElementById('depCount').textContent = deps.length + ' dependencias';
-  buildDepSelects();
-}
-
-function buildDepSelects() {
-  var selects = ['depFromSel', 'depToSel'];
-  for (var s = 0; s < selects.length; s++) {
-    var sel = document.getElementById(selects[s]);
-    if (sel.options.length > 1) continue;
-    sel.innerHTML = '<option value="">-- Seleccion\u00e1 --</option>';
-    for (var i = 0; i < PLAN_DATA.length; i++) {
-      var opt = document.createElement('option');
-      opt.value = PLAN_DATA[i].id;
-      opt.textContent = PLAN_DATA[i].id + ' \u00b7 ' + PLAN_DATA[i].nombre.substring(0, 40);
-      sel.appendChild(opt);
-    }
-  }
-}
-
-function deleteDep(idx) {
-  deps.splice(idx, 1);
-  renderDepsTable();
-  updateCascade();
-  renderAll();
-  saveState();
-}
-
-function addManualDep() {
-  var from = document.getElementById('depFromSel').value;
-  var to = document.getElementById('depToSel').value;
-  if (!from || !to || from === to) { alert('Seleccion\u00e1 dos \u00edtems distintos.'); return; }
-  for (var i = 0; i < deps.length; i++) {
-    if (deps[i].from === from && deps[i].to === to) { alert('Esa dependencia ya existe.'); return; }
-  }
-  deps.push({ from: from, to: to, tipo: 'manual' });
-  renderDepsTable();
-  updateCascade();
-  renderAll();
-  saveState();
-}
-
-// ============================================================
-// PLAN DE RECUPERACIÓN
-// ============================================================
-
-var recoveryMonths = 3; // default slider
-
-function calcRecovery() {
-  var allDelays = {};
-  var vals = Object.values(selectedItems);
-  for (var i = 0; i < vals.length; i++) allDelays[vals[i].id] = vals[i].delay;
-
-  var hasDelay = vals.some(function(x) { return x.delay > 0; });
-  var panel = document.getElementById('recoveryPanel');
-  if (!panel) return;
-
-  if (!hasDelay) {
-    panel.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text3);font-family:IBM Plex Mono,monospace;font-size:10px">Assign\u00e1 atrasos para ver el plan de recuperaci\u00f3n</div>';
-    return;
-  }
-
-  var origCurve   = calcCurvaS({});
-  var delayCurve  = calcCurvaS(allDelays);
-
-  // Mes actual = primer mes donde hay divergencia significativa
-  var mesActual = 0;
-  for (var m = 0; m < origCurve.length; m++) {
-    if (delayCurve[m] < origCurve[m] - 0.05) { mesActual = m; break; }
-  }
-
-  // Brecha en el mes actual (% de avance perdido)
-  var brechaActual = origCurve[mesActual] - delayCurve[mesActual];
-
-  // Calcular la curva de recuperación:
-  // Aceleramos los ítems afectados en los próximos recoveryMonths meses
-  // redistribuyendo el trabajo faltante de forma lineal
-  var recoveryCurve = delayCurve.slice();
-
-  // Ítems afectados que aún tienen trabajo en los próximos meses
-  var affectedItems = vals.filter(function(it) { return it.delay > 0; });
-
-  // Para cada ítem afectado, calculamos cuánto avance perdió y lo redistribuimos
-  // en los recoveryMonths meses siguientes al mesActual
-  var recMensual = new Array(NUM_MESES + 20).fill(0);
-
-  // Primero copiamos el plan original completo
-  for (var i = 0; i < PLAN_DATA.length; i++) {
-    var item = PLAN_DATA[i];
-    var d = allDelays[item.id] || 0;
-    for (var j = 0; j < item.meses.length; j++) {
-      if (item.meses[j] > 0) {
-        var mesReal = j + Math.floor(d);
-        if (mesReal < recMensual.length) recMensual[mesReal] += item.incidencia * item.meses[j];
-      }
-    }
-  }
-
-  // Para ítems afectados, redistribuimos el retraso en los meses de recuperación
-  for (var i = 0; i < affectedItems.length; i++) {
-    var it = affectedItems[i];
-    var delay = it.delay;
-    if (delay <= 0) continue;
-
-    // Encontrar trabajo que quedó fuera del mes 17 por el atraso
-    var workLost = 0;
-    for (var j = 0; j < it.meses.length; j++) {
-      if (it.meses[j] > 0) {
-        var mesConDelay = j + Math.floor(delay);
-        if (mesConDelay >= NUM_MESES) workLost += it.incidencia * it.meses[j];
-      }
-    }
-
-    // Redistribuir ese trabajo adelantando en los meses de recuperación
-    if (workLost > 0 && recoveryMonths > 0) {
-      var workPerMonth = workLost / recoveryMonths;
-      for (var m = mesActual; m < mesActual + recoveryMonths && m < recMensual.length; m++) {
-        recMensual[m] += workPerMonth;
-      }
-    }
-  }
-
-  // Calcular curva acumulada de recuperación
-  var maxLen = Math.max(origCurve.length, delayCurve.length) + 5;
-  var recAccum = [];
-  var suma = 0;
-  for (var m = 0; m < recMensual.length && m < maxLen; m++) {
-    suma += recMensual[m];
-    recAccum.push(Math.min(suma * 100, 100));
-  }
-
-  // Mes en que la curva de recuperación alcanza la original
-  var mesConverge = -1;
-  for (var m = mesActual; m < recAccum.length && m < origCurve.length; m++) {
-    if (recAccum[m] >= origCurve[m] - 0.5) { mesConverge = m + 1; break; }
-  }
-
-  // Tabla de acciones por ítem afectado
-  var tableRows = '';
-  for (var i = 0; i < affectedItems.length; i++) {
-    var it = affectedItems[i];
-    if (it.isCascade) continue; // solo mostrar manuales en tabla acción
-    var delay = it.delay;
-    // Trabajo planificado para los meses de recuperación (sin atraso)
-    var workPlan = 0;
-    for (var j = mesActual; j < mesActual + recoveryMonths && j < it.meses.length; j++) {
-      workPlan += it.meses[j];
-    }
-    if (workPlan <= 0) continue;
-    // Factor de aceleración necesario
-    var factorNeeded = Math.min((workPlan + delay * 0.1) / Math.max(workPlan, 0.001), 3);
-    var pctExtra = Math.round((factorNeeded - 1) * 100);
-    var cls = pctExtra < 20 ? 'ok' : pctExtra < 50 ? 'warn' : 'danger';
-    tableRows += '<tr>' +
-      '<td style="color:var(--accent)">' + it.id + '</td>' +
-      '<td class="name-col">' + it.nombre + '</td>' +
-      '<td style="color:var(--red)">+' + delay + 'm</td>' +
-      '<td><span style="color:var(--' + cls + ');font-weight:600">+' + pctExtra + '%</span> de ritmo</td>' +
-      '<td style="color:var(--text2)">M' + (mesActual+1) + ' a M' + (mesActual+recoveryMonths) + '</td>' +
-      '</tr>';
-  }
-
-  // Renderizar panel
-  var convergeText = mesConverge > 0
-    ? 'Se retoma curva original en <span style="color:var(--green);font-weight:700">Mes ' + mesConverge + '</span>'
-    : '<span style="color:var(--red)">No alcanza a recuperarse en el plazo elegido</span>';
-
-  panel.innerHTML =
-    '<div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;flex-shrink:0">' +
-      '<div style="font-size:11px;color:var(--text)">' + convergeText + '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;margin-left:auto">' +
-        '<span style="font-size:10px;color:var(--text2)">Recuperar en:</span>' +
-        '<input type="range" min="1" max="6" step="1" value="' + recoveryMonths + '" ' +
-          'oninput="recoveryMonths=parseInt(this.value);document.getElementById(\'recMonLabel\').textContent=this.value+\' mes\'+(this.value>1?\'es\':\'\');calcRecovery()" ' +
-          'style="width:100px;accent-color:var(--green)">' +
-        '<span id="recMonLabel" style="font-family:IBM Plex Mono,monospace;font-size:11px;color:var(--green);min-width:50px">' + recoveryMonths + ' mes' + (recoveryMonths>1?'es':'') + '</span>' +
-      '</div>' +
-    '</div>' +
-    (tableRows
-      ? '<table class="impact-tbl"><thead><tr>' +
-          '<th>Item</th><th>Nombre</th><th>Atraso</th><th>Aceleraci\u00f3n necesaria</th><th>Per\u00edodo</th>' +
-        '</tr></thead><tbody>' + tableRows + '</tbody></table>'
-      : '<div style="font-size:10px;color:var(--text3);font-family:IBM Plex Mono,monospace;padding:8px">Solo hay cascadas seleccionadas. Seleccion\u00e1 un \u00edtem manual para ver acciones.</div>'
-    );
-
-  // Actualizar gráfico con curva de recuperación
-  updateChartWithRecovery(origCurve, delayCurve, recAccum);
-}
-
-function updateChartWithRecovery(origCurve, delayCurve, recAccum) {
-  if (!charts.curvaS) return;
-  var maxLen = Math.max(origCurve.length, delayCurve.length, recAccum.length);
-  var labels = [];
-  for (var i = 0; i < maxLen; i++) labels.push('M' + (i+1));
-
-  charts.curvaS.data.labels = labels;
-  charts.curvaS.data.datasets = [
-    { label: 'Plan original',      data: padTo(origCurve, maxLen),  borderColor: '#3aafe0', backgroundColor: 'rgba(58,175,224,0.07)', borderWidth: 2, pointRadius: 2.5, fill: true, tension: 0.3 },
-    { label: 'Con atrasos',        data: padTo(delayCurve, maxLen), borderColor: '#e05c3a', backgroundColor: 'rgba(224,92,58,0.05)',  borderWidth: 2, borderDash: [6,3], pointRadius: 2.5, fill: false, tension: 0.3 },
-    { label: 'Curva recuperaci\u00f3n', data: padTo(recAccum, maxLen),  borderColor: '#3fb950', backgroundColor: 'rgba(63,185,80,0.06)',  borderWidth: 2, borderDash: [3,3], pointRadius: 2,   fill: false, tension: 0.3 }
-  ];
-  charts.curvaS.update('none');
-}
-
-</script>
-<script>
-window.addEventListener('load', function() { init(); });
-</script>
-</body>
-</html>
+        <div class="recovery-zone">
+          <div class="impact-title" style="display:flex;align-items:center;gap:8px">
+            <span style="color:var(--green)">&#x25B
